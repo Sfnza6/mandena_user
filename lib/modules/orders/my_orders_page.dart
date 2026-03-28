@@ -5,12 +5,13 @@ import 'package:mandena/modules/orders/my_orders_controller.dart';
 class MyOrdersPage extends StatelessWidget {
   const MyOrdersPage({super.key});
 
-  // 🎨 ألوان البني الأصلية
-  static const Color kPrimary = Color(0xFF6F3F17); // بني ثقيل
-  static const Color kBg = Color(0xFFF7F8FC); // خلفية ناعمة
+  static const Color kPrimary = Color(0xFFFF5A00);
+  static const Color kPrimaryDark = Color(0xFFFF2E00);
+  static const Color kBg = Color(0xFFF5F5F7);
   static const Color kCard = Colors.white;
-  static const Color kTextMain = Color(0xFF2D2D2D);
-  static const Color kTextSub = Color(0xFF9CA3AF);
+  static const Color kTextMain = Color(0xFF111827);
+  static const Color kTextSub = Color(0xFF8B95A7);
+  static const Color kSoftOrange = Color(0xFFFFF1E9);
 
   @override
   Widget build(BuildContext context) {
@@ -18,63 +19,55 @@ class MyOrdersPage extends StatelessWidget {
         ? Get.find<MyOrdersController>()
         : Get.put(MyOrdersController());
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    const Color brown = kPrimary;
-    final Color bgColor = isDark ? theme.scaffoldBackgroundColor : kBg;
-    final Color cardColor = isDark ? theme.cardColor : kCard;
-    final Color primaryIconColor = isDark ? brown : brown;
-    final Color textMainColor = isDark ? Colors.white : kTextMain;
-    final Color textSubColor = isDark ? Colors.white70 : kTextSub;
-
-    // ===== التبويبات (رجعنا البني) =====
     Widget tabItem(String label, bool active, int count, VoidCallback onTap) {
       return Expanded(
         child: GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
-            margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: active
-                  ? kPrimary.withOpacity(isDark ? 0.18 : 0.12)
-                  : Colors.transparent,
+              color: active ? kSoftOrange : Colors.transparent,
               borderRadius: BorderRadius.circular(18),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              textDirection: TextDirection.rtl,
               children: [
                 Text(
                   label,
                   style: TextStyle(
-                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                    color: active ? brown : textMainColor.withOpacity(0.6),
+                    fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                    color: active ? kPrimary : kTextSub,
                     fontSize: 13,
                   ),
                 ),
-                const SizedBox(width: 6),
-                if (count > 0)
+                if (count > 0) ...[
+                  const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: (active ? brown : textSubColor).withOpacity(0.12),
+                      color: active
+                          ? const Color(0xFFFFE0CC)
+                          : const Color(0xFFF3F4F6),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '$count',
                       style: TextStyle(
-                        color: active ? brown : textSubColor,
+                        color: active ? kPrimary : kTextSub,
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ),
@@ -82,172 +75,153 @@ class MyOrdersPage extends StatelessWidget {
       );
     }
 
-    // ===== حالة فارغة =====
     Widget emptyState(String text) {
       return ListView(
         children: [
-          const SizedBox(height: 120),
+          const SizedBox(height: 110),
           Center(
             child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: cardColor,
+              width: 86,
+              height: 86,
+              decoration: const BoxDecoration(
+                color: kSoftOrange,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.4 : 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.receipt_long_outlined,
-                size: 40,
-                color: primaryIconColor.withOpacity(0.9),
+                size: 42,
+                color: kPrimary,
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Center(
             child: Text(
               text,
-              style: TextStyle(color: textSubColor, fontSize: 13),
+              style: const TextStyle(color: kTextSub, fontSize: 14),
             ),
           ),
         ],
       );
     }
 
-    // ===== بطاقة الطلب (مع البني) =====
     Widget orderTile(UserOrder o, {required bool isHistory}) {
-      final (title, color) = c.statusLabel(o);
+      final (title, _) = c.statusLabel(o);
 
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(18),
+          color: kCard,
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.4 : 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(.04),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // السطر الأول
               Row(
+                textDirection: TextDirection.rtl,
                 children: [
                   Text(
                     '#${o.id}',
-                    style: TextStyle(
-                      color: textSubColor,
-                      fontWeight: FontWeight.w600,
+                    style: const TextStyle(
+                      color: kTextSub,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
-                      vertical: 4,
+                      vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: brown.withOpacity(.10),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: brown.withOpacity(.25)),
+                      color: kSoftOrange,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: const Color(0xFFFFD6BF)),
                     ),
                     child: Text(
                       title,
                       style: const TextStyle(
-                        color: brown,
-                        fontWeight: FontWeight.w700,
+                        color: kPrimary,
+                        fontWeight: FontWeight.w800,
                         fontSize: 12,
                       ),
                     ),
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
-
-              // السطر الثاني
               Row(
+                textDirection: TextDirection.rtl,
                 children: [
-                  Text(
-                    c.formatDate(o.createdAt),
-                    style: TextStyle(color: textSubColor, fontSize: 12),
-                  ),
-                  const SizedBox(width: 6),
-                  Text('•', style: TextStyle(color: textSubColor)),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${o.itemsCount.toString().padLeft(2, '0')} أصناف',
-                    style: TextStyle(color: textSubColor, fontSize: 12),
-                  ),
-                  const Spacer(),
                   Text(
                     'د.ل ${o.total.toStringAsFixed(2)}',
                     style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                      color: brown,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      color: kPrimary,
                     ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${o.itemsCount.toString().padLeft(2, '0')} أصناف',
+                    style: const TextStyle(color: kTextSub, fontSize: 12.5),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text('•', style: TextStyle(color: kTextSub)),
+                  const SizedBox(width: 6),
+                  Text(
+                    c.formatDate(o.createdAt),
+                    style: const TextStyle(color: kTextSub, fontSize: 12.5),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 12),
-
-              // 🔻 الأزرار:
-              // - في "حاليًا": تتبع الطلب + تفاصيل (مثل ما هي)
-              // - في "السجل": زر تفاصيل واحد بعرض كامل وبنفس ستايل زر التقييم القديم
+              const SizedBox(height: 14),
               Row(
+                textDirection: TextDirection.rtl,
                 children: isHistory
                     ? [
-                        // 🟤 السجل: زر تفاصيل فقط بعرض كامل
                         Expanded(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: brown,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              backgroundColor: kPrimary,
+                              foregroundColor: Colors.white,
                               elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 13),
                             ),
                             onPressed: () => Get.toNamed(
                               '/order-details',
                               arguments: {'orderId': o.id},
                             ),
                             child: const Text(
-                              'تفاصيل',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              'تفاصيل الطلب',
+                              style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
                       ]
                     : [
-                        // 🟢 تبويب "حاليًا": نفس المنطق القديم
                         Expanded(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: brown,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              backgroundColor: kPrimary,
+                              foregroundColor: Colors.white,
                               elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 13),
                             ),
                             onPressed: () => Get.toNamed(
                               '/order-tracking',
@@ -255,11 +229,7 @@ class MyOrdersPage extends StatelessWidget {
                             ),
                             child: const Text(
                               'تتبع الطلب',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
@@ -267,18 +237,21 @@ class MyOrdersPage extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: brown),
-                              foregroundColor: brown,
+                              foregroundColor: kPrimary,
+                              side: const BorderSide(color: kPrimary),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              padding: const EdgeInsets.symmetric(vertical: 13),
                             ),
                             onPressed: () => Get.toNamed(
                               '/order-details',
                               arguments: {'orderId': o.id},
                             ),
-                            child: const Text('تفاصيل'),
+                            child: const Text(
+                              'تفاصيل',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
                           ),
                         ),
                       ],
@@ -292,16 +265,20 @@ class MyOrdersPage extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: bgColor,
+        backgroundColor: kBg,
         appBar: AppBar(
-          backgroundColor: bgColor,
+          backgroundColor: kBg,
           elevation: 0,
           centerTitle: true,
           title: const Text(
             'طلباتي',
-            style: TextStyle(fontWeight: FontWeight.w700, color: kPrimary),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              color: kPrimary,
+              fontSize: 28,
+            ),
           ),
-          iconTheme: IconThemeData(color: primaryIconColor),
+          iconTheme: const IconThemeData(color: kPrimary),
         ),
         body: Obx(() {
           final tab = c.tabIndex.value;
@@ -310,22 +287,22 @@ class MyOrdersPage extends StatelessWidget {
 
           return Column(
             children: [
-              // فريم التبويبات
               Container(
-                margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(
-                  color: cardColor,
+                  color: kCard,
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.4 : 0.03),
+                      color: Colors.black.withOpacity(.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Row(
+                  textDirection: TextDirection.rtl,
                   children: [
                     tabItem(
                       'حاليًا',
@@ -342,16 +319,13 @@ class MyOrdersPage extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // القائمة
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () => c.fetch(),
+                  color: kPrimary,
                   child: c.loading.value
-                      ? Center(
-                          child: CircularProgressIndicator(
-                            color: primaryIconColor,
-                          ),
+                      ? const Center(
+                          child: CircularProgressIndicator(color: kPrimary),
                         )
                       : (tab == 0 && curCount == 0)
                       ? emptyState('لا توجد طلبات جارية')

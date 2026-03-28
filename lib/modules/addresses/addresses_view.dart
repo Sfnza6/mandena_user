@@ -5,104 +5,144 @@ import '../../data/models/address.dart';
 import 'addresses_controller.dart';
 import '../../app_routes.dart';
 
-// ✅ لتحديث السلة مباشرة لما نغيّر الافتراضي
-
 class AddressesView extends StatelessWidget {
   const AddressesView({super.key});
 
-  static const _brown = Color(0xFF6F3F17);
-
-  static const _muted = Color(0xFF808089);
-  static const _r = Radius.circular(16);
+  static const _primary = Color(0xFFFF5A00);
+  static const _primaryDark = Color(0xFFFF2E00);
+  static const _primarySoft = Color(0xFFFFF1E9);
+  static const _pageBg = Color(0xFFF5F5F7);
+  static const _card = Colors.white;
+  static const _text = Color(0xFF111827);
+  static const _muted = Color(0xFF8B95A7);
+  static const _r = Radius.circular(18);
 
   @override
   Widget build(BuildContext context) {
     final c = Get.put(AddressesController());
-    final theme = Theme.of(context);
-    final bgColor = theme.scaffoldBackgroundColor;
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: bgColor,
-        appBar: AppBar(
-          backgroundColor: theme.appBarTheme.backgroundColor ?? bgColor,
-          elevation: 0,
-          centerTitle: true,
-          title: Text(
-            c.pickMode ? 'اختر عنواناً' : 'عناويني',
-            style: TextStyle(
-              color: theme.brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black87,
-              fontWeight: FontWeight.w800,
+        backgroundColor: _pageBg,
+        body: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [_primary, _primaryDark],
+                ),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(28),
+                ),
+              ),
+              padding: EdgeInsets.fromLTRB(
+                18,
+                MediaQuery.of(context).padding.top + 14,
+                18,
+                22,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Get.back(),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      c.pickMode ? 'اختر عنواناً' : 'عناويني',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 26,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Center(
+                    child: Text(
+                      'اختر العنوان المناسب أو أضف عنواناً جديداً بسهولة',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFFFFE3D3),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          iconTheme: IconThemeData(
-            color: theme.brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black87,
-          ),
+            Expanded(
+              child: Obx(() {
+                if (c.loading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: _primary),
+                  );
+                }
+                if (c.items.isEmpty) {
+                  return const _EmptyState();
+                }
+
+                return ListView.separated(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 104),
+                  itemCount: c.items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  itemBuilder: (_, i) {
+                    final a = c.items[i];
+                    return _AddressCard(
+                      address: a,
+                      pickMode: c.pickMode,
+                      onTap: () => c.pick(a),
+                      onEdit: () => _openInlineEditor(context, c, a),
+                      onDelete: () => c.delete(a),
+                      onMakeDefault: () => _makeDefaultAndNotify(c, a),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
         ),
-
-        // يعتمد على Rx: loading/items
-        body: Obx(() {
-          if (c.loading.value) {
-            return const Center(
-              child: CircularProgressIndicator(color: _brown),
-            );
-          }
-          if (c.items.isEmpty) return const _EmptyState();
-
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
-            itemCount: c.items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, i) {
-              final a = c.items[i];
-              return _AddressCard(
-                address: a,
-                pickMode: c.pickMode, // قراءة عادية
-                onTap: () => c.pick(a),
-                onEdit: () => _openInlineEditor(context, c, a),
-                onDelete: () => c.delete(a),
-                onMakeDefault: () => _makeDefaultAndNotify(c, a),
-              );
-            },
-          );
-        }),
-
-        // ✅ زر إضافة عنوان:
-        // يختفي إذا كانت الشاشة في وضع pickMode أو الحساب تجريبي
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: Obx(() {
-          // ✅✅ التعديل المهم:
-          // نجبر Obx يقرأ Rx دائمًا حتى لو pickMode=true (لأن OR تعمل short-circuit)
           final guest = c.isGuest.value;
-
-          if (c.pickMode || guest) {
-            return const SizedBox.shrink();
-          }
+          if (c.pickMode || guest) return const SizedBox.shrink();
 
           return SizedBox(
             width: MediaQuery.of(context).size.width - 32,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: _brown,
+                backgroundColor: _primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(_r),
                 ),
               ),
               onPressed: () async {
-                debugPrint('[Addresses] زر "عنوان جديد" تم النقر');
                 await _addNewAddressFlow(context, c);
               },
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_rounded),
               label: const Text(
                 'عنوان جديد',
-                style: TextStyle(fontWeight: FontWeight.w800),
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
               ),
             ),
           );
@@ -111,22 +151,17 @@ class AddressesView extends StatelessWidget {
     );
   }
 
-  /* -------------------- دالة جديدة: تجعل الافتراضي + تحدّث السلة/الاختيار -------------------- */
-
   Future<void> _makeDefaultAndNotify(AddressesController c, Address a) async {
     try {
       await c.setDefault(a);
       await c.load();
-    } catch (e) {
-      debugPrint('[Addresses] setDefault error: $e');
-    }
+    } catch (_) {}
 
     if (c.pickMode) {
       try {
         final cart = Get.find<CartController>();
         cart.setSelectedAddress(a);
       } catch (_) {}
-
       Get.back(result: a);
       return;
     }
@@ -137,17 +172,12 @@ class AddressesView extends StatelessWidget {
     } catch (_) {}
   }
 
-  /* -------------------- التدفقات -------------------- */
-
   Future<void> _addNewAddressFlow(
     BuildContext context,
     AddressesController c,
   ) async {
     try {
-      debugPrint('[Addresses] الذهاب إلى الخريطة: route=${AppRoutes.mapPick}');
       final res = await Get.toNamed(AppRoutes.mapPick);
-      debugPrint('[Addresses] نتيجة الرجوع من الخريطة: $res');
-
       if (res is! Map) return;
 
       final double? latV = (res['lat'] is num)
@@ -179,9 +209,7 @@ class AddressesView extends StatelessWidget {
         readOnlyCoords: true,
         isNew: true,
       );
-    } catch (e, st) {
-      debugPrint('[Addresses] خطأ أثناء فتح الخريطة: $e');
-      debugPrint(st.toString());
+    } catch (e) {
       Get.snackbar('خطأ', 'تعذّر فتح الخريطة: $e');
     }
   }
@@ -199,16 +227,14 @@ class AddressesView extends StatelessWidget {
     final lng = TextEditingController(text: existing?.lng.toString() ?? '');
     bool isDefault = (existing?.isDefault ?? 0) == 1;
 
-    final theme = Theme.of(context);
-
     Get.bottomSheet(
       Directionality(
         textDirection: TextDirection.rtl,
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: const BorderRadius.vertical(top: _r),
+          decoration: const BoxDecoration(
+            color: _card,
+            borderRadius: BorderRadius.vertical(top: _r),
           ),
           child: SafeArea(
             top: false,
@@ -218,7 +244,7 @@ class AddressesView extends StatelessWidget {
                 children: [
                   Center(
                     child: Container(
-                      width: 40,
+                      width: 42,
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
@@ -229,14 +255,14 @@ class AddressesView extends StatelessWidget {
                   ),
                   Text(
                     isNew ? 'إضافة عنوان' : 'تعديل العنوان',
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
+                      color: _text,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
-
                   OutlinedButton.icon(
                     onPressed: () async {
                       final currLat = double.tryParse(lat.text.trim());
@@ -248,7 +274,6 @@ class AddressesView extends StatelessWidget {
                           if (currLng != null) 'lng': currLng,
                         },
                       );
-                      debugPrint('[Addresses] تعديل موقع على الخريطة رجع: $r');
                       if (r is Map) {
                         if (r['lat'] != null) lat.text = r['lat'].toString();
                         if (r['lng'] != null) lng.text = r['lng'].toString();
@@ -258,37 +283,36 @@ class AddressesView extends StatelessWidget {
                     },
                     icon: const Icon(
                       Icons.edit_location_alt_outlined,
-                      color: _brown,
+                      color: _primary,
                     ),
                     label: const Text(
                       'تعديل الموقع على الخريطة',
-                      style: TextStyle(color: _brown),
+                      style: TextStyle(color: _primary),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: _brown),
+                      side: const BorderSide(color: _primary),
                       shape: const RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(_r),
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
-
                   _LabeledField(
                     label: 'اسم العنوان',
                     controller: label,
-                    hint: ' ضع اسم عنوان صحيح مثل :المنطقة او الحي السكني ',
+                    hint: 'مثال: العمل أو المنزل أو الحي السكني',
                   ),
                   _LabeledField(
                     label: 'وصف العنوان (اختياري)',
                     controller: desc,
                     maxLines: 2,
                   ),
-
                   Row(
+                    textDirection: TextDirection.rtl,
                     children: [
                       Expanded(
                         child: _LabeledField(
-                          label: 'Latitude',
+                          label: 'خط العرض',
                           controller: lat,
                           readOnly: readOnlyCoords,
                           keyboardType: TextInputType.number,
@@ -297,7 +321,7 @@ class AddressesView extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: _LabeledField(
-                          label: 'Longitude',
+                          label: 'خط الطول',
                           controller: lng,
                           readOnly: readOnlyCoords,
                           keyboardType: TextInputType.number,
@@ -305,15 +329,20 @@ class AddressesView extends StatelessWidget {
                       ),
                     ],
                   ),
-
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('تعيين كعنوان افتراضي'),
-                    value: isDefault,
-                    onChanged: (v) => isDefault = v,
-                    activeThumbColor: _brown,
+                  StatefulBuilder(
+                    builder: (context, setModalState) {
+                      return SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text(
+                          'تعيين كعنوان افتراضي',
+                          textAlign: TextAlign.right,
+                        ),
+                        value: isDefault,
+                        onChanged: (v) => setModalState(() => isDefault = v),
+                        activeThumbColor: _primary,
+                      );
+                    },
                   ),
-
                   const SizedBox(height: 10),
                   Obx(
                     () => ElevatedButton(
@@ -363,7 +392,7 @@ class AddressesView extends StatelessWidget {
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _brown,
+                        backgroundColor: _primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: const RoundedRectangleBorder(
@@ -396,8 +425,6 @@ class AddressesView extends StatelessWidget {
   }
 }
 
-/* ===================== Widgets داخلية ===================== */
-
 class _AddressCard extends StatelessWidget {
   final Address address;
   final VoidCallback onTap;
@@ -417,15 +444,12 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cardColor = theme.cardColor;
-
     return InkWell(
       onTap: pickMode ? onTap : null,
       borderRadius: const BorderRadius.all(AddressesView._r),
       child: Ink(
         decoration: BoxDecoration(
-          color: cardColor,
+          color: AddressesView._card,
           borderRadius: const BorderRadius.all(AddressesView._r),
           boxShadow: [
             BoxShadow(
@@ -436,74 +460,140 @@ class _AddressCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
           child: Row(
+            textDirection: TextDirection.rtl,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                children: [
-                  address.isDefault == 1
-                      ? const Icon(
-                          Icons.radio_button_checked,
-                          color: AddressesView._brown,
-                        )
-                      : InkWell(
-                          onTap: onMakeDefault,
-                          child: const Icon(
-                            Icons.radio_button_unchecked,
-                            color: Colors.black26,
-                          ),
-                        ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-              const SizedBox(width: 10),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      address.label,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    if (address.addressText.trim().isNotEmpty)
-                      Text(
-                        address.addressText,
-                        style: const TextStyle(
-                          color: AddressesView._muted,
-                          fontSize: 13,
-                        ),
-                      ),
-                    const SizedBox(height: 8),
                     Row(
+                      textDirection: TextDirection.rtl,
                       children: [
-                        _Chip(text: 'Lat: ${address.lat}'),
-                        const SizedBox(width: 6),
-                        _Chip(text: 'Lng: ${address.lng}'),
+                        Expanded(
+                          child: Text(
+                            address.label,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                              color: AddressesView._text,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        if (address.isDefault == 1)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AddressesView._primarySoft,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'افتراضي',
+                              style: TextStyle(
+                                color: AddressesView._primary,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                              ),
+                            ),
+                          )
+                        else
+                          InkWell(
+                            onTap: onMakeDefault,
+                            borderRadius: BorderRadius.circular(999),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F7),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                'تعيين افتراضي',
+                                style: TextStyle(
+                                  color: AddressesView._muted,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
+                    if (address.addressText.trim().isNotEmpty)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          address.addressText,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            color: AddressesView._muted,
+                            fontSize: 13.2,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Wrap(
+                        textDirection: TextDirection.rtl,
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _Chip(text: 'Lat: ${address.lat}'),
+                          _Chip(text: 'Lng: ${address.lng}'),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
               Column(
                 children: [
-                  IconButton(
-                    tooltip: 'تعديل',
-                    onPressed: onEdit,
-                    icon: const Icon(
-                      Icons.edit_outlined,
-                      color: Colors.black87,
+                  InkWell(
+                    onTap: onEdit,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AddressesView._primarySoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.edit_outlined,
+                        color: AddressesView._primary,
+                      ),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'حذف',
-                    onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: onDelete,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF0EE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.redAccent,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -518,17 +608,23 @@ class _AddressCard extends StatelessWidget {
 class _Chip extends StatelessWidget {
   const _Chip({required this.text});
   final String text;
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AddressesView._brown.withOpacity(.08),
-        borderRadius: BorderRadius.circular(12),
+        color: AddressesView._primarySoft,
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
-        style: const TextStyle(color: AddressesView._brown, fontSize: 12),
+        textAlign: TextAlign.right,
+        style: const TextStyle(
+          color: AddressesView._primary,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -553,13 +649,6 @@ class _LabeledField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final fill =
-        theme.inputDecorationTheme.fillColor ??
-        theme.colorScheme.surface.withOpacity(
-          theme.brightness == Brightness.dark ? 0.25 : 0.9,
-        );
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
@@ -567,21 +656,24 @@ class _LabeledField extends StatelessWidget {
         maxLines: maxLines,
         readOnly: readOnly,
         keyboardType: keyboardType,
+        textAlign: TextAlign.right,
+        textDirection: TextDirection.rtl,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
+          alignLabelWithHint: true,
           filled: true,
-          fillColor: fill,
+          fillColor: const Color(0xFFF9FAFB),
           border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(AddressesView._r),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: const BorderRadius.all(AddressesView._r),
-            borderSide: BorderSide(color: theme.dividerColor),
+          enabledBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(AddressesView._r),
+            borderSide: BorderSide(color: Color(0xFFE5E7EB)),
           ),
           focusedBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(AddressesView._r),
-            borderSide: BorderSide(color: AddressesView._brown, width: 1.2),
+            borderSide: BorderSide(color: AddressesView._primary, width: 1.2),
           ),
         ),
       ),
@@ -594,37 +686,40 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final muted =
-        theme.textTheme.bodySmall?.color?.withOpacity(0.75) ??
-        AddressesView._muted;
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.location_off_outlined,
-              size: 54,
-              color: theme.iconTheme.color ?? AddressesView._muted,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'لا توجد عناوين بعد',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: theme.brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.black87,
+            Container(
+              width: 84,
+              height: 84,
+              decoration: const BoxDecoration(
+                color: AddressesView._primarySoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.location_off_outlined,
+                size: 42,
+                color: AddressesView._primary,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              'أضف عنوانك الأول من خلال الزر بالأسفل.',
+            const SizedBox(height: 14),
+            const Text(
+              'لا توجد عناوين بعد',
               textAlign: TextAlign.center,
-              style: TextStyle(color: muted),
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: AddressesView._text,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'أضف عنوانك الأول ليصبح الوصول والطلب أسهل وأسرع.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AddressesView._muted, height: 1.6),
             ),
           ],
         ),

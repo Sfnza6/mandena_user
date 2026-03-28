@@ -227,23 +227,24 @@ class CartController extends GetxController {
   }
 
   Future<void> clearForBranchChange() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final keys = sp
-          .getKeys()
-          .where((k) => k.startsWith('cart_user_'))
-          .toList();
-      for (final k in keys) {
-        await sp.remove(k);
-      }
-    } catch (_) {}
+    await switchBranchContext();
+  }
 
+  Future<void> switchBranchContext() async {
     cart.clear();
     subtotal.value = 0;
     delivery.value = 0;
     services.value = 0;
-    selectedAddress.value = null;
-    selectedAddressName.value = '';
+
+    if (_userId != null && _userId! > 0) {
+      await _loadCartFromCache();
+      await load();
+      await _loadDefaultAddressName();
+    } else {
+      selectedAddress.value = null;
+      selectedAddressName.value = '';
+    }
+
     update();
   }
 
@@ -429,9 +430,16 @@ class CartController extends GetxController {
   Future<void> setQty(int itemId, int qty) async {
     if (_userId == null) return;
     try {
+      final row = cart.firstWhereOrNull((e) => _toInt(e['item_id']) == itemId);
+      final cartItemId = _toInt(row?['cart_item_id']);
       await _api.post(
         'update_cart_item.php',
-        body: {'user_id': '$_userId', 'item_id': '$itemId', 'quantity': '$qty'},
+        body: {
+          'user_id': '$_userId',
+          'item_id': '$itemId',
+          if (cartItemId > 0) 'cart_item_id': '$cartItemId',
+          'quantity': '$qty',
+        },
       );
       await load();
     } catch (e) {
@@ -454,9 +462,15 @@ class CartController extends GetxController {
   Future<void> remove(int itemId) async {
     if (_userId == null) return;
     try {
+      final row = cart.firstWhereOrNull((e) => _toInt(e['item_id']) == itemId);
+      final cartItemId = _toInt(row?['cart_item_id']);
       await _api.post(
         'remove_cart_item.php',
-        body: {'user_id': '$_userId', 'item_id': '$itemId'},
+        body: {
+          'user_id': '$_userId',
+          'item_id': '$itemId',
+          if (cartItemId > 0) 'cart_item_id': '$cartItemId',
+        },
       );
       await load();
     } catch (e) {

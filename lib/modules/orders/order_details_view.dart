@@ -5,76 +5,79 @@ import 'package:mandena/modules/orders/order_details_controller.dart';
 class OrderDetailsView extends GetView<OrderDetailsController> {
   const OrderDetailsView({super.key});
 
-  // 🎨 نفس جو "طلباتي"
-  static const Color brown = Color(0xFF6F3F17); // البني الثقيل الأساسي
-  static const Color kBg = Color(0xFFF7F4EF); // خلفية كريمية ناعمة
-  static const Color kChipBg = Color(0xFFEADFD3); // خلفية الشارات
-  static const Color kItemBg = Color(0xFFF7F2EC); // خلفية كرت الأصناف
+  static const Color kPrimary = Color(0xFFFF5A00);
+  static const Color kPrimaryDark = Color(0xFFFF2E00);
+  static const Color kBg = Color(0xFFF5F5F7);
+  static const Color kCard = Colors.white;
+  static const Color kText = Color(0xFF111827);
+  static const Color kMuted = Color(0xFF8B95A7);
+  static const Color kSoftOrange = Color(0xFFFFF1E9);
 
   @override
   Widget build(BuildContext context) {
-    // ✅ تأكيد تسجيل الكنترولر قبل استخدام GetView.controller
     if (!Get.isRegistered<OrderDetailsController>()) {
       Get.put(OrderDetailsController());
     }
 
-    // 🌓 ثيم
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    const Color brownConst = brown;
-    final Color primaryIconColor = isDark ? brownConst : brownConst;
-    final Color bgColor = isDark ? theme.scaffoldBackgroundColor : kBg;
-    final Color cardColor = isDark ? theme.cardColor : Colors.white;
-    final Color itemBgColor = isDark
-        ? theme.cardColor.withOpacity(0.2)
-        : kItemBg;
-
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: bgColor,
+        backgroundColor: kBg,
         appBar: AppBar(
-          backgroundColor: bgColor,
+          backgroundColor: kBg,
           elevation: 0,
           centerTitle: true,
-          title: Text(
+          leading: IconButton(
+            onPressed: () => Get.back(),
+            icon: const Icon(Icons.arrow_forward_rounded),
+          ),
+          title: const Text(
             'تفاصيل الطلب',
             style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-              color: primaryIconColor,
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+              color: kPrimary,
             ),
           ),
-          iconTheme: IconThemeData(color: primaryIconColor),
+          iconTheme: const IconThemeData(color: kPrimary),
         ),
         body: Obx(() {
           if (controller.loading.value) {
-            return const Center(child: CircularProgressIndicator(color: brown));
+            return const Center(
+              child: CircularProgressIndicator(color: kPrimary),
+            );
           }
+
           final h = controller.header.value;
           if (h == null) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.receipt_long_outlined,
-                    size: 56,
-                    color: isDark ? primaryIconColor : const Color(0xFFCBB9A2),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'لا توجد بيانات لهذا الطلب',
-                    style: TextStyle(
-                      color: isDark ? Colors.white70 : Colors.black54,
+                  Container(
+                    width: 84,
+                    height: 84,
+                    decoration: const BoxDecoration(
+                      color: kSoftOrange,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.receipt_long_outlined,
+                      size: 42,
+                      color: kPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'لا توجد بيانات لهذا الطلب',
+                    style: TextStyle(color: kMuted, fontSize: 14),
+                  ),
+                  const SizedBox(height: 10),
                   TextButton(
                     onPressed: controller.fetch,
                     child: const Text(
                       'إعادة المحاولة',
-                      style: TextStyle(color: brown),
+                      style: TextStyle(color: kPrimary),
                     ),
                   ),
                 ],
@@ -85,417 +88,68 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
           final d = controller.driver.value;
 
           return RefreshIndicator(
-            color: brown,
+            color: kPrimary,
             onRefresh: controller.fetch,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
               children: [
-                // 🔹 بطاقة رأسية للطلب (رقم + حالة + معلومات أساسية)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
+                _HeaderCard(
+                  orderId: h.id,
+                  status: h.status,
+                  deliveryType: controller.deliveryTypeArabic(h.statusOrder),
+                  address: h.address,
+                  createdAt: h.createdAt,
+                ),
+                const SizedBox(height: 14),
+                _PaymentCard(h: h),
+                const SizedBox(height: 18),
+                const Text(
+                  'الأصناف',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                    color: kText,
                   ),
+                ),
+                const SizedBox(height: 10),
+                ...controller.items.map((it) => _OrderItemCard(item: it)),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(16),
+                    color: kCard,
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.4 : 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withOpacity(.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // رقم الطلب + شارة الحالة
-                      Row(
-                        children: [
-                          Text(
-                            '#${h.id}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: kChipBg.withOpacity(.8),
-                              border: Border.all(color: brown.withOpacity(.25)),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: const Text(
-                              // نفس h.status لكن اللون ثابت
-                              // (لو تحب تغييره لاحقًا، خليه كما هو)
-                              '',
-                              style: TextStyle(
-                                color: brown,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
+                      _PriceRow(
+                        title: 'رسوم التوصيل',
+                        value: h.deliveryFee.toStringAsFixed(2),
+                        muted: true,
                       ),
-                      // ✅ نرجع عرض الحالة بالنص الأصلي (حتى لا نحذف شيء)
-                      const SizedBox(height: 4),
-                      Text(
-                        h.status,
-                        style: const TextStyle(
-                          color: brown,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(height: 1),
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'نوع التوصيل: ${controller.deliveryTypeArabic(h.statusOrder)}',
-                        style: TextStyle(
-                          color: isDark ? Colors.white70 : Colors.black54,
-                          fontSize: 13,
-                        ),
-                      ),
-                      if (h.address.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'العنوان: ${h.address}',
-                          style: TextStyle(
-                            color: isDark ? Colors.white70 : Colors.black54,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 4),
-                      Text(
-                        'التاريخ: ${h.createdAt}',
-                        style: TextStyle(
-                          color: isDark ? Colors.white60 : Colors.black45,
-                          fontSize: 12,
-                        ),
+                      _PriceRow(
+                        title: 'الإجمالي النهائي',
+                        value: controller.computedGrandTotal.toStringAsFixed(2),
+                        isTotal: true,
                       ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 14),
-
-                // ✅ معلومات الدفع + رسالة الدفع أونلاين (إن وجدت)
-                _buildPaymentInfo(h),
-
-                const SizedBox(height: 16),
-
-                const Text(
-                  'الأصناف',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: brown,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                ...controller.items.map(
-                  (it) => Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: itemBgColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // السطر الرئيسي للصنف
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    it.name,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14.5,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'الكمية: ${it.quantity} × ${it.price.toStringAsFixed(2)} د.ل',
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black54,
-                                      fontSize: 12.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              (it.lineTotalWithExtras > 0
-                                      ? it.lineTotalWithExtras
-                                      : it.lineTotal)
-                                  .toStringAsFixed(2),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: isDark ? Colors.white : Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Text('د.ل'),
-                          ],
-                        ),
-
-                        // الإضافات
-                        if (it.extras.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Text(
-                            'الإضافات',
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : Colors.black54,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          ...it.extras.map(
-                            (ex) => Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '• ${ex.name} (${ex.quantity} × ${ex.price.toStringAsFixed(2)} د.ل)',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  ex.lineTotal.toStringAsFixed(2),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark
-                                        ? Colors.white
-                                        : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Text('د.ل'),
-                              ],
-                            ),
-                          ),
-                        ],
-
-                        // المكوّنات المُضافة (مع السعر)
-                        if (it.componentsAdd.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Text(
-                            'المكوّنات المُضافة',
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : Colors.black54,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          ...it.componentsAdd.map(
-                            (c) => Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '• ${c.name} (${c.quantity} × ${c.price.toStringAsFixed(2)} د.ل)',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  (c.price * c.quantity).toStringAsFixed(2),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark
-                                        ? Colors.white
-                                        : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Text('د.ل'),
-                              ],
-                            ),
-                          ),
-                        ],
-
-                        // المكوّنات المحذوفة (بدون سعر)
-                        if (it.componentsRem.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Text(
-                            'المكوّنات المحذوفة',
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : Colors.black54,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          ...it.componentsRem.map((c) {
-                            final label = (c.name.trim().isNotEmpty)
-                                ? c.name
-                                : (c.id > 0 ? '#${c.id}' : '— محذوف —');
-                            return const Row(children: []).copyWith(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '• $label',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-
-                const Divider(height: 28),
-
-                // رسوم التوصيل
-                Row(
-                  children: [
-                    Text(
-                      'رسوم التوصيل',
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : Colors.black54,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const SizedBox(),
-                    const Spacer(),
-                    Text(
-                      h.deliveryFee.toStringAsFixed(2),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Text('د.ل'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // الإجمالي النهائي
-                Row(
-                  children: const [
-                    Text(
-                      'الإجمالي النهائي',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: brown,
-                      ),
-                    ),
-                    Spacer(),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const SizedBox(),
-                    const Spacer(),
-                    Text(
-                      controller.computedGrandTotal.toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: brown,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Text('د.ل'),
-                  ],
-                ),
-
-                // السائق
                 if (d != null) ...[
-                  const Divider(height: 28),
-                  const Text(
-                    'السائق',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: brown,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.4 : 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.person_pin, color: brown),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            (d['name'] ?? '-').toString(),
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          (d['phone'] ?? '').toString(),
-                          style: const TextStyle(
-                            color: Colors.blue,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(height: 16),
+                  _DriverCard(driver: d),
                 ],
               ],
             ),
@@ -504,10 +158,140 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
       ),
     );
   }
+}
 
-  /// كارت معلومات الدفع + رسالة الدفع أونلاين
-  Widget _buildPaymentInfo(OrderHeaderModel h) {
-    // ✅ أي قيمة غير 0 في paymentMethod → أونلاين
+class _HeaderCard extends StatelessWidget {
+  const _HeaderCard({
+    required this.orderId,
+    required this.status,
+    required this.deliveryType,
+    required this.address,
+    required this.createdAt,
+  });
+
+  final int orderId;
+  final String status;
+  final String deliveryType;
+  final String address;
+  final String createdAt;
+
+  Color _statusColor(String s) {
+    final v = s.toLowerCase().trim();
+    if (v.contains('pending')) return const Color(0xFFFF9800);
+    if (v.contains('processing')) return const Color(0xFF2196F3);
+    if (v.contains('delivered')) return const Color(0xFF2E7D32);
+    if (v.contains('rejected') || v.contains('cancel'))
+      return const Color(0xFFD32F2F);
+    return OrderDetailsView.kPrimary;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _statusColor(status);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [OrderDetailsView.kPrimary, OrderDetailsView.kPrimaryDark],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: OrderDetailsView.kPrimary.withOpacity(.18),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Row(
+            textDirection: TextDirection.rtl,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(.18),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '#$orderId',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  textDirection: TextDirection.rtl,
+                  children: [
+                    Icon(Icons.circle, color: statusColor, size: 10),
+                    const SizedBox(width: 6),
+                    Text(
+                      status,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _InfoLine(
+            icon: Icons.delivery_dining_rounded,
+            text: 'نوع التوصيل: $deliveryType',
+            white: true,
+          ),
+          if (address.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _InfoLine(
+              icon: Icons.location_on_outlined,
+              text: 'العنوان: $address',
+              white: true,
+            ),
+          ],
+          const SizedBox(height: 8),
+          _InfoLine(
+            icon: Icons.schedule_rounded,
+            text: 'التاريخ: $createdAt',
+            white: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentCard extends StatelessWidget {
+  const _PaymentCard({required this.h});
+
+  final OrderHeaderModel h;
+
+  @override
+  Widget build(BuildContext context) {
     final isOnline =
         (h.paymentMethod != 0) ||
         (h.gateway.trim().isNotEmpty &&
@@ -537,100 +321,426 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
         bankLabel = h.gateway;
     }
 
-    return Card(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'معلومات الدفع',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: brown,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: OrderDetailsView.kCard,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const Text(
+            'معلومات الدفع',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 17,
+              color: OrderDetailsView.kText,
             ),
+          ),
+          const SizedBox(height: 12),
+          _InfoRow(title: 'طريقة الدفع', value: methodLabel),
+          if (isOnline) ...[
             const SizedBox(height: 8),
-
-            // طريقة الدفع
-            Row(
-              children: [
-                const Text(
-                  'طريقة الدفع: ',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            _InfoRow(title: 'المصرف', value: bankLabel),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Text(
+                'تم الدفع أونلاين بنجاح، وتم خصم قيمة الطلب من حسابكم. الطلب الآن قيد المراجعة من المطعم.',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  color: Color(0xFF2E7D32),
+                  fontSize: 13.5,
+                  height: 1.5,
+                  fontWeight: FontWeight.w600,
                 ),
-                Text(
-                  methodLabel,
-                  style: const TextStyle(color: Colors.black87, fontSize: 13),
-                ),
-              ],
+              ),
             ),
-
-            const SizedBox(height: 4),
-
-            // المصرف (لو أونلاين)
-            if (isOnline) ...[
-              Row(
-                children: [
-                  const Text(
-                    'المصرف: ',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                  ),
-                  Flexible(
-                    child: Text(
-                      bankLabel,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 13,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // رسالة توضيح الدفع أونلاين
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  'تم الدفع أونلاين بنجاح، وتم خصم قيمة الطلب من حسابكم. الطلب الآن قيد المراجعة من المطعم.',
-                  style: TextStyle(
-                    color: Color(0xFF2E7D32),
-                    fontSize: 13.5,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
-// امتداد صغير لتعديل الـ Row بدون حذف البنية الأصلية
-extension _RowCopy on Row {
-  Row copyWith({List<Widget>? children}) {
+class _OrderItemCard extends StatelessWidget {
+  const _OrderItemCard({required this.item});
+
+  final OrderItemModel item;
+
+  @override
+  Widget build(BuildContext context) {
+    final total =
+        (item.lineTotalWithExtras > 0
+                ? item.lineTotalWithExtras
+                : item.lineTotal)
+            .toStringAsFixed(2);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: OrderDetailsView.kCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFE6D7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.03),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Row(
+            textDirection: TextDirection.rtl,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      item.name,
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15.5,
+                        color: OrderDetailsView.kText,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'الكمية: ${item.quantity} × ${item.price.toStringAsFixed(2)} د.ل',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        color: OrderDetailsView.kMuted,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: OrderDetailsView.kSoftOrange,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  '$total د.ل',
+                  style: const TextStyle(
+                    color: OrderDetailsView.kPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (item.extras.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const _MiniSectionTitle('الإضافات'),
+            const SizedBox(height: 6),
+            ...item.extras.map(
+              (ex) => _BulletLine(
+                text:
+                    '${ex.name} (${ex.quantity} × ${ex.price.toStringAsFixed(2)} د.ل)',
+                trailing: '${ex.lineTotal.toStringAsFixed(2)} د.ل',
+              ),
+            ),
+          ],
+          if (item.componentsAdd.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const _MiniSectionTitle('المكوّنات المُضافة'),
+            const SizedBox(height: 6),
+            ...item.componentsAdd.map(
+              (c) => _BulletLine(
+                text:
+                    '${c.name} (${c.quantity} × ${c.price.toStringAsFixed(2)} د.ل)',
+                trailing: '${(c.price * c.quantity).toStringAsFixed(2)} د.ل',
+              ),
+            ),
+          ],
+          if (item.componentsRem.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const _MiniSectionTitle('المكوّنات المحذوفة'),
+            const SizedBox(height: 6),
+            ...item.componentsRem.map((c) {
+              final label = (c.name.trim().isNotEmpty)
+                  ? c.name
+                  : (c.id > 0 ? '#${c.id}' : '— محذوف —');
+              return _BulletLine(text: label);
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DriverCard extends StatelessWidget {
+  const _DriverCard({required this.driver});
+
+  final Map driver;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: OrderDetailsView.kCard,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        textDirection: TextDirection.rtl,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: OrderDetailsView.kSoftOrange,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.person_outline_rounded,
+              color: OrderDetailsView.kPrimary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text(
+                  'السائق',
+                  style: TextStyle(
+                    color: OrderDetailsView.kMuted,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  (driver['name'] ?? '-').toString(),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: OrderDetailsView.kText,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            (driver['phone'] ?? '').toString(),
+            style: const TextStyle(
+              color: OrderDetailsView.kPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({required this.icon, required this.text, this.white = false});
+
+  final IconData icon;
+  final String text;
+  final bool white;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
-      key: key,
-      mainAxisAlignment: mainAxisAlignment,
-      mainAxisSize: mainAxisSize,
-      crossAxisAlignment: crossAxisAlignment,
-      textDirection: textDirection,
-      verticalDirection: verticalDirection,
-      textBaseline: textBaseline,
-      children: children ?? this.children,
+      textDirection: TextDirection.rtl,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: white ? Colors.white : OrderDetailsView.kPrimary,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: white ? Colors.white : OrderDetailsView.kText,
+              fontSize: 13.5,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.title, required this.value});
+
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      textDirection: TextDirection.rtl,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$title: ',
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: OrderDetailsView.kText,
+            fontSize: 13.5,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: OrderDetailsView.kMuted,
+              fontSize: 13.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniSectionTitle extends StatelessWidget {
+  const _MiniSectionTitle(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      textAlign: TextAlign.right,
+      style: const TextStyle(
+        color: OrderDetailsView.kPrimary,
+        fontWeight: FontWeight.w800,
+        fontSize: 13.5,
+      ),
+    );
+  }
+}
+
+class _BulletLine extends StatelessWidget {
+  const _BulletLine({required this.text, this.trailing});
+
+  final String text;
+  final String? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        textDirection: TextDirection.rtl,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              '• $text',
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: OrderDetailsView.kText,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 10),
+            Text(
+              trailing!,
+              style: const TextStyle(
+                color: OrderDetailsView.kMuted,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PriceRow extends StatelessWidget {
+  const _PriceRow({
+    required this.title,
+    required this.value,
+    this.muted = false,
+    this.isTotal = false,
+  });
+
+  final String title;
+  final String value;
+  final bool muted;
+  final bool isTotal;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      textDirection: TextDirection.rtl,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: isTotal
+                ? OrderDetailsView.kText
+                : (muted ? OrderDetailsView.kMuted : OrderDetailsView.kText),
+            fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
+            fontSize: isTotal ? 16 : 14,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          '$value د.ل',
+          style: TextStyle(
+            color: isTotal ? OrderDetailsView.kPrimary : OrderDetailsView.kText,
+            fontWeight: FontWeight.w900,
+            fontSize: isTotal ? 16 : 14,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -12,7 +12,6 @@ class AccountView extends GetView<AccountController> {
   static const Color kCard = Colors.white;
   static const Color kText = Color(0xFF111827);
   static const Color kMuted = Color(0xFF8B95A7);
-  static const Color kBorder = Color(0xFFE9EDF3);
 
   @override
   Widget build(BuildContext context) {
@@ -59,14 +58,30 @@ class AccountView extends GetView<AccountController> {
                       30,
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
-                          'حسابي',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 25,
-                            fontWeight: FontWeight.w900,
+                        if (Navigator.of(context).canPop())
+                          Row(
+                            children: [
+                              IconButton(
+                                onPressed: () => Get.back(),
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                        const SizedBox(height: 4),
+                        const Center(
+                          child: Text(
+                            'حسابي',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -77,6 +92,7 @@ class AccountView extends GetView<AccountController> {
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: Row(
+                            textDirection: TextDirection.rtl,
                             children: [
                               Container(
                                 width: 74,
@@ -130,45 +146,8 @@ class AccountView extends GetView<AccountController> {
                   ),
                 ),
                 SliverToBoxAdapter(
-                  child: Transform.translate(
-                    offset: const Offset(0, -18),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: kCard,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(.06),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          children: [
-                            Expanded(
-                              child: _StatBox(value: '145', label: 'نقطة'),
-                            ),
-                            _StatDivider(),
-                            Expanded(
-                              child: _StatBox(value: '8', label: 'عنوان'),
-                            ),
-                            _StatDivider(),
-                            Expanded(
-                              child: _StatBox(value: '12', label: 'طلب'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
                     child: Container(
                       decoration: BoxDecoration(
                         color: kCard,
@@ -186,7 +165,7 @@ class AccountView extends GetView<AccountController> {
                           _MenuTile(
                             title: 'الطلبات السابقة',
                             icon: Icons.receipt_long_outlined,
-                            badge: '12',
+
                             onTap: controller.goToOrders,
                           ),
                           _MenuTile(
@@ -239,12 +218,14 @@ class AccountView extends GetView<AccountController> {
                           ],
                         ),
                         child: const Row(
+                          textDirection: TextDirection.rtl,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.logout_rounded, color: Colors.redAccent),
                             SizedBox(width: 8),
                             Text(
                               'تسجيل الخروج',
+                              textAlign: TextAlign.right,
                               style: TextStyle(
                                 color: Colors.redAccent,
                                 fontWeight: FontWeight.w800,
@@ -277,50 +258,12 @@ class AccountView extends GetView<AccountController> {
   }
 }
 
-class _StatBox extends StatelessWidget {
-  const _StatBox({required this.value, required this.label});
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: AccountView.kPrimary,
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            color: AccountView.kMuted,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatDivider extends StatelessWidget {
-  const _StatDivider();
-  @override
-  Widget build(BuildContext context) {
-    return Container(width: 1, height: 36, color: AccountView.kBorder);
-  }
-}
-
 class _MenuTile extends StatelessWidget {
   const _MenuTile({
     required this.title,
     required this.icon,
     required this.onTap,
+    // ignore: unused_element_parameter
     this.badge,
   });
 
@@ -337,11 +280,32 @@ class _MenuTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         child: Row(
+          textDirection: TextDirection.rtl,
           children: [
-            const Icon(Icons.chevron_left_rounded, color: AccountView.kMuted),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF2EA),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AccountView.kPrimary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  color: AccountView.kText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
             if (badge != null) ...[
               Container(
-                margin: const EdgeInsets.only(left: 8),
+                margin: const EdgeInsetsDirectional.only(start: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFE8D8),
@@ -357,25 +321,8 @@ class _MenuTile extends StatelessWidget {
                 ),
               ),
             ],
-            const Spacer(),
-            Text(
-              title,
-              style: const TextStyle(
-                color: AccountView.kText,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF2EA),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: AccountView.kPrimary, size: 20),
-            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.chevron_left_rounded, color: AccountView.kMuted),
           ],
         ),
       ),

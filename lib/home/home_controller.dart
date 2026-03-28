@@ -1033,4 +1033,33 @@ class HomeController extends GetxController {
       _showUserError('تعذّر إضافة الصنف إلى السلة، حاول مرة أخرى.');
     }
   }
+
+  bool isItemFavorite(int itemId) {
+    try {
+      if (!Get.isRegistered<FavoritesController>()) return false;
+      return Get.find<FavoritesController>().isFavorite(itemId);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> toggleFavoriteFromHome(ItemModel item) async {
+    if (await _isDemoUser()) {
+      _showUserError(
+        'هذا حساب تجريبي للتصفح فقط.\nلا يمكنك تعديل المفضلة من الحساب التجريبي.',
+      );
+      return;
+    }
+
+    if (!Get.isRegistered<FavoritesController>()) {
+      Get.put(FavoritesController(), permanent: true);
+    }
+
+    try {
+      await Get.find<FavoritesController>().toggleFromHome(item);
+    } catch (e) {
+      debugPrint('toggleFavoriteFromHome error: $e');
+      _showUserError('تعذّر تعديل المفضلة حالياً.');
+    }
+  }
 }

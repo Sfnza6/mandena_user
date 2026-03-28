@@ -75,13 +75,17 @@ class HomeItemsSection extends StatelessWidget {
 
                 return PressableScale(
                   onTap: () => _openItemDetail(item),
-                  child: FoodCard(
-                    item: item,
-                    isSoldOut: soldOut,
-                    remaining: remain,
-                    onAddToCart: (!soldOut && item.isActive)
-                        ? () => c.addItemToCart(item)
-                        : null,
+                  child: Obx(
+                    () => FoodCard(
+                      item: item,
+                      isSoldOut: soldOut,
+                      remaining: remain,
+                      isFavorite: c.isItemFavorite(item.id),
+                      onToggleFavorite: () => c.toggleFavoriteFromHome(item),
+                      onAddToCart: (!soldOut && item.isActive)
+                          ? () => c.addItemToCart(item)
+                          : null,
+                    ),
                   ),
                 );
               },

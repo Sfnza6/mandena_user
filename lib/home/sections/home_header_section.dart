@@ -193,7 +193,7 @@ class HomeHeaderSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'عند تغيير الفرع سيتم تحديث الصفحة الرئيسية وتصفير السلة والمفضلة لهذا الفرع.',
+                  'عند تغيير الفرع سيتم تحديث الصفحة الرئيسية، ولكل فرع سلة ومفضلة خاصة به.',
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: 12.5,

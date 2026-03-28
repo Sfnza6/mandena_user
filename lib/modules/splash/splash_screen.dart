@@ -44,9 +44,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
     _logoScale = Tween<double>(
       begin: .85,
       end: 1.0,
-    ).animate(
-      CurvedAnimation(parent: _logoCtrl, curve: Curves.easeOutBack),
-    );
+    ).animate(CurvedAnimation(parent: _logoCtrl, curve: Curves.easeOutBack));
     _logoFade = CurvedAnimation(parent: _logoCtrl, curve: Curves.easeIn);
     _logoCtrl.forward();
 
@@ -57,9 +55,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
     _nameSlide = Tween<Offset>(
       begin: const Offset(0, -0.6),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _nameCtrl, curve: Curves.easeOutBack),
-    );
+    ).animate(CurvedAnimation(parent: _nameCtrl, curve: Curves.easeOutBack));
     _nameFade = CurvedAnimation(parent: _nameCtrl, curve: Curves.easeIn);
 
     Future.delayed(const Duration(milliseconds: 600), () {
@@ -113,7 +109,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
                 child: FadeTransition(
                   opacity: _nameFade,
                   child: const Text(
-                    'EVORANTA',
+                    'ماندينا',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 26,

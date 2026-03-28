@@ -10,6 +10,7 @@ const _kPageBg = Color(0xFFF5F5F7);
 const _kCard = Colors.white;
 const _kText = Color(0xFF111827);
 const _kMuted = Color(0xFF8B95A7);
+// ignore: unused_element
 const _kBorder = Color(0xFFE9EDF3);
 
 class CartView extends StatelessWidget {
@@ -45,7 +46,17 @@ class CartView extends StatelessWidget {
               ),
               child: Obx(
                 () => Row(
+                  textDirection: TextDirection.rtl,
                   children: [
+                    const Text(
+                      'سلة التسوق',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
@@ -63,15 +74,14 @@ class CartView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Spacer(),
-                    const Text(
-                      'سلة التسوق',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 24,
-                      ),
-                    ),
+                    const SizedBox(width: 8),
+                    // IconButton(
+                    //   onPressed: () => Get.back(),
+                    //   icon: const Icon(
+                    //     Icons.arrow_back_ios_new_rounded,
+                    //     color: Colors.white,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -145,71 +155,7 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-      child: InkWell(
-        // onTap: c.goPickAddress,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: _kCard,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(.05),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF2EA),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.location_on_outlined, color: _kPrimary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text(
-                      'عنوان التوصيل',
-                      style: TextStyle(
-                        color: _kMuted,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Obx(
-                      () => Text(
-                        c.selectedAddressName.value.trim().isEmpty
-                            ? 'اختر عنوان التوصيل'
-                            : c.selectedAddressName.value.trim(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _kText,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_left_rounded, color: _kMuted),
-            ],
-          ),
-        ),
-      ),
-    );
+    return const Padding(padding: EdgeInsets.fromLTRB(16, 14, 16, 4));
   }
 }
 
@@ -276,7 +222,7 @@ class _CartItemCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${price.toStringAsFixed(0)} ر.س',
+                  '${price.toStringAsFixed(0)} د.ل',
                   style: const TextStyle(
                     color: _kPrimary,
                     fontWeight: FontWeight.w800,
@@ -310,7 +256,7 @@ class _CartItemCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      '${(price * qty).toStringAsFixed(0)} ر.س',
+                      '${(price * qty).toStringAsFixed(0)} د.ل',
                       style: const TextStyle(
                         color: _kText,
                         fontWeight: FontWeight.w800,
@@ -378,56 +324,6 @@ class _SummaryBlock extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: _kCard,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 46,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: _kBorder),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: const Text(
-                      'أدخل الكوبون',
-                      style: TextStyle(color: _kMuted),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _kPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: const Text(
-                      'تطبيق',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
@@ -456,17 +352,17 @@ class _SummaryBlock extends StatelessWidget {
                 const SizedBox(height: 12),
                 _SummaryRow(
                   label: 'المجموع الفرعي',
-                  value: '${c.subtotal.value.toStringAsFixed(0)} ر.س',
+                  value: '${c.subtotal.value.toStringAsFixed(0)} د.ل',
                 ),
                 const SizedBox(height: 8),
                 _SummaryRow(
                   label: 'رسوم التوصيل',
-                  value: '${c.delivery.value.toStringAsFixed(0)} ر.س',
+                  value: '${c.delivery.value.toStringAsFixed(0)} د.ل',
                 ),
                 const Divider(height: 24),
                 _SummaryRow(
                   label: 'الإجمالي',
-                  value: '${c.total.toStringAsFixed(2)} ر.س',
+                  value: '${c.total.toStringAsFixed(2)} د.ل',
                   highlight: true,
                 ),
               ],
@@ -486,7 +382,11 @@ class _SummaryBlock extends StatelessWidget {
               ),
               child: const Text(
                 'إتمام الطلب',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

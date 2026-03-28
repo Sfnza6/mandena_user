@@ -10,12 +10,16 @@ class TopRatedTile extends StatelessWidget {
     required this.item,
     required this.isSoldOut,
     required this.remaining,
+    required this.isFavorite,
+    this.onToggleFavorite,
     this.onAddToCart,
   });
 
   final ItemModel item;
   final bool isSoldOut;
   final int? remaining;
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
   final VoidCallback? onAddToCart;
 
   @override
@@ -167,6 +171,29 @@ class TopRatedTile extends StatelessWidget {
                     ),
                   ],
                 ),
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: Material(
+                    color: Colors.white.withOpacity(.95),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: onToggleFavorite,
+                      customBorder: const CircleBorder(),
+                      child: SizedBox(
+                        width: 34,
+                        height: 34,
+                        child: Icon(
+                          isFavorite
+                              ? Icons.star_rounded
+                              : Icons.star_border_outlined,
+                          color: HomeUi.kPrimary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 if (hasDiscount)
                   Positioned(
                     left: 12,
@@ -191,7 +218,7 @@ class TopRatedTile extends StatelessWidget {
                   ),
                 if (statusText != null)
                   Positioned(
-                    right: 12,
+                    right: 52,
                     top: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(

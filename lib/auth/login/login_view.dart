@@ -21,24 +21,21 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    // 🎨 نفس روح تصميم Register / OTP / طلباتي + دعم الليل
-    const kPrimary = Color(0xFF6F3F17); // بني EVORANTA
+    const kPrimary = Color(0xFFFF5A00);
+    const kPrimaryDark = Color(0xFFFF2E00);
+    const kSoftOrange = Color(0xFFFFF1E9);
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final kPageBg = theme.scaffoldBackgroundColor;
-    final kDark = isDark ? Colors.white : const Color(0xFF1F2933);
-
-    // ✅ تعديل بسيط: ألوان تعبئة الحقول بدون بنفسجي
+    final kPageBg = isDark
+        ? theme.scaffoldBackgroundColor
+        : const Color(0xFFF5F5F7);
+    final kTextMain = isDark ? Colors.white : const Color(0xFF111827);
+    final kTextSub = isDark ? Colors.white70 : const Color(0xFF8B95A7);
     final kFieldFill = isDark
         ? const Color(0xFF111827)
-        : const Color(0xFFF2F3F7);
-
-    // ✅ تعديل لون بطاقة تسجيل الدخول فقط (إزالة البنفسجي)
+        : const Color(0xFFFFFAF6);
     final cardColor = isDark ? const Color(0xFF111827) : Colors.white;
-
-    final subTextColor = isDark
-        ? Colors.grey.shade400
-        : const Color(0xFF6B7280);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -47,177 +44,245 @@ class _LoginViewState extends State<LoginView> {
         body: SafeArea(
           child: Stack(
             children: [
-              // الهيدر المنحني
-              SizedBox.expand(
-                child: CustomPaint(
-                  painter: const _HeaderPainter(color: kPrimary),
+              Container(
+                height: 270,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [kPrimary, kPrimaryDark],
+                  ),
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: -40,
+                      left: -20,
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(.07),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 50,
+                      right: -25,
+                      child: Container(
+                        width: 110,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(.08),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
-              // المحتوى
               ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  const SizedBox(height: 14),
-                  // لوجو + نص EVORANTA وسط الأعلى
+                  const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Row(
+                      textDirection: TextDirection.rtl,
+                      children: [const Spacer()],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets/images/logo.png',
-                              width: 70,
-                              height: 70,
-                              color: Colors.white,
-                              colorBlendMode: BlendMode.srcIn,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'EVORANTA',
-                          style: TextStyle(
+                        Container(
+                          width: 84,
+                          height: 84,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(.14),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          alignment: Alignment.center,
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            width: 50,
+                            height: 50,
                             color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
+                            colorBlendMode: BlendMode.srcIn,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 14),
                         const Text(
-                          'أهلاً بعودتك 👋',
+                          'تسجيل الدخول',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'أهلاً بعودتك، سجّل دخولك للمتابعة',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFFFFE3D3),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 140),
-
-                  // بطاقة تسجيل الدخول
+                  const SizedBox(height: 72),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     child: Container(
-                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.07),
-                            blurRadius: 22,
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 24,
                             offset: const Offset(0, 12),
                           ),
                         ],
                       ),
                       child: Form(
-                        key: c.formKey, // formKey من الكنترولر
+                        key: c.formKey,
                         autovalidateMode: AutovalidateMode.onUserInteraction,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                              'تسجيل الدخول',
-                              style: TextStyle(
-                                color: kDark,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
+                            Row(
+                              textDirection: TextDirection.rtl,
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: kSoftOrange,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    Icons.login_rounded,
+                                    color: kPrimary,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'بيانات الدخول',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: kTextMain,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'أدخل رقم الهاتف وكلمة المرور للوصول لحسابك.',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: kTextSub,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'أدخل بيانات حسابك للمتابعة',
-                              style: TextStyle(
-                                color: subTextColor,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // رقم الهاتف
+                            const SizedBox(height: 18),
                             TextFormField(
                               controller: c.phoneCtrl,
                               keyboardType: TextInputType.phone,
                               textInputAction: TextInputAction.next,
+                              textAlign: TextAlign.right,
                               decoration: InputDecoration(
                                 labelText: 'رقم الهاتف',
                                 labelStyle: TextStyle(
                                   color: isDark
                                       ? Colors.white70
-                                      : Colors.black54,
+                                      : const Color(0xFF6B7280),
                                   fontWeight: FontWeight.w700,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.phone_outlined,
+                                  color: kPrimary,
                                 ),
                                 filled: true,
                                 fillColor: kFieldFill,
-                                border: const OutlineInputBorder(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide.none,
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(10),
-                                  ),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 14,
-                                  vertical: 14,
+                                  vertical: 16,
                                 ),
                               ),
                               validator: c.validatePhone,
                             ),
-
-                            const SizedBox(height: 12),
-
-                            // كلمة المرور مع إظهار/إخفاء
+                            const SizedBox(height: 14),
                             Obx(
                               () => TextFormField(
                                 controller: c.passCtrl,
                                 obscureText: c.hidePass.value,
                                 textInputAction: TextInputAction.done,
+                                textAlign: TextAlign.right,
                                 onFieldSubmitted: (_) => _tryLogin(),
                                 decoration: InputDecoration(
                                   labelText: 'كلمة المرور',
                                   labelStyle: TextStyle(
                                     color: isDark
                                         ? Colors.white70
-                                        : Colors.black54,
+                                        : const Color(0xFF6B7280),
                                     fontWeight: FontWeight.w700,
                                   ),
-                                  filled: true,
-                                  fillColor: kFieldFill,
-                                  border: const OutlineInputBorder(
-                                    borderSide: BorderSide.none,
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(10),
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 14,
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline_rounded,
+                                    color: kPrimary,
                                   ),
                                   suffixIcon: IconButton(
                                     onPressed: c.togglePass,
                                     icon: Icon(
                                       c.hidePass.value
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
                                       color: isDark
                                           ? Colors.white70
                                           : const Color(0xFF6B7280),
                                     ),
                                   ),
+                                  filled: true,
+                                  fillColor: kFieldFill,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 16,
+                                  ),
                                 ),
                                 validator: c.validatePass,
                               ),
                             ),
-
                             const SizedBox(height: 8),
-
-                            // نسيت كلمة المرور
                             Align(
                               alignment: Alignment.centerLeft,
                               child: TextButton(
@@ -237,22 +302,19 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                               ),
                             ),
-
-                            const SizedBox(height: 4),
-
-                            // زر الدخول
+                            const SizedBox(height: 6),
                             SizedBox(
-                              height: 46,
+                              height: 54,
                               child: Obx(
                                 () => ElevatedButton(
                                   onPressed: c.loading.value ? null : _tryLogin,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: kPrimary,
                                     foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
                                     elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
                                   ),
                                   child: c.loading.value
                                       ? const SizedBox(
@@ -266,19 +328,16 @@ class _LoginViewState extends State<LoginView> {
                                       : const Text(
                                           'تسجيل دخول',
                                           style: TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 15,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 16,
                                           ),
                                         ),
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 12),
-
-                            // 🔹 زر الدخول كـ حساب تجريبي
                             SizedBox(
-                              height: 42,
+                              height: 48,
                               child: Obx(
                                 () => OutlinedButton(
                                   onPressed: c.loading.value
@@ -286,23 +345,20 @@ class _LoginViewState extends State<LoginView> {
                                       : c.loginAsGuest,
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: kPrimary.withOpacity(
-                                        isDark ? 0.9 : 1,
-                                      ),
-                                      width: 1.1,
+                                      color: kPrimary.withOpacity(.9),
+                                      width: 1.2,
                                     ),
-                                    foregroundColor: isDark
-                                        ? Colors.white
-                                        : kPrimary,
+                                    backgroundColor: kSoftOrange,
+                                    foregroundColor: kPrimary,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
                                   child: const Text(
                                     'الدخول بحساب تجريبي',
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
@@ -313,10 +369,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // إنشاء حساب
                   Center(
                     child: TextButton(
                       onPressed: c.goToRegister,
@@ -330,7 +383,6 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 18),
                 ],
               ),
@@ -342,56 +394,8 @@ class _LoginViewState extends State<LoginView> {
   }
 
   void _tryLogin() {
-    FocusScope.of(context).unfocus(); // اغلق الكيبورد
+    FocusScope.of(context).unfocus();
     final ok = c.formKey.currentState?.validate() ?? false;
     if (ok) c.login();
   }
-}
-
-// رسّام الهيدر بالقوس + ظل (نفس النمط في الشاشات الأخرى)
-class _HeaderPainter extends CustomPainter {
-  final Color color;
-
-  const _HeaderPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const double h = 235;
-    const double depth = 52;
-
-    final shadowPaint = Paint()
-      ..color = const Color(0x1A000000)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
-
-    final shadowPath = Path()
-      ..moveTo(0, h - depth + 12)
-      ..quadraticBezierTo(
-        size.width / 2,
-        h + depth + 12,
-        size.width,
-        h - depth + 12,
-      )
-      ..lineTo(size.width, h + 48)
-      ..lineTo(0, h + 48)
-      ..close();
-
-    canvas.drawPath(shadowPath, shadowPaint);
-
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(0, h - depth)
-      ..quadraticBezierTo(size.width / 2, h + depth, size.width, h - depth)
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _HeaderPainter oldDelegate) =>
-      oldDelegate.color != color;
 }

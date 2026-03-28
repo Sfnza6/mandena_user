@@ -11,6 +11,7 @@ class ItemDetailView extends StatelessWidget {
   static const Color kText = Color(0xFF111827);
   static const Color kMuted = Color(0xFF8B95A7);
   static const Color kBorder = Color(0xFFE9EDF3);
+  static const Color kStar = Color(0xFFFFC83D);
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +24,6 @@ class ItemDetailView extends StatelessWidget {
         body: Obx(() {
           final item = c.item;
           final fav = c.isFavorite.value;
-          // ignore: unused_local_variable
           final avg = c.avgRating.value <= 0 ? item.rating : c.avgRating.value;
 
           return Stack(
@@ -56,9 +56,9 @@ class ItemDetailView extends StatelessWidget {
                           left: 18,
                           child: _CircleBtn(
                             icon: fav
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            color: fav ? Colors.redAccent : kText,
+                                ? Icons.star_rounded
+                                : Icons.star_border_rounded,
+                            color: fav ? kStar : kText,
                             onTap: c.toggleFavorite,
                           ),
                         ),
@@ -66,7 +66,7 @@ class ItemDetailView extends StatelessWidget {
                           top: MediaQuery.of(context).padding.top + 10,
                           right: 18,
                           child: _CircleBtn(
-                            icon: Icons.arrow_forward_rounded,
+                            icon: Icons.arrow_back_rounded,
                             color: kText,
                             onTap: Get.back,
                           ),
@@ -76,7 +76,7 @@ class ItemDetailView extends StatelessWidget {
                   ),
                   SliverToBoxAdapter(
                     child: Transform.translate(
-                      offset: const Offset(0, -26),
+                      offset: const Offset(0, -8),
                       child: Container(
                         decoration: const BoxDecoration(
                           color: kPageBg,
@@ -84,24 +84,16 @@ class ItemDetailView extends StatelessWidget {
                             top: Radius.circular(28),
                           ),
                         ),
-                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
+                        padding: const EdgeInsets.fromLTRB(18, 24, 18, 110),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
+                          textDirection: TextDirection.rtl,
                           children: [
                             Row(
+                              textDirection: TextDirection.rtl,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  '${item.price.toStringAsFixed(0)} ر.س',
-                                  style: const TextStyle(
-                                    color: kPrimary,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                const Spacer(),
                                 Expanded(
-                                  flex: 3,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
@@ -110,13 +102,13 @@ class ItemDetailView extends StatelessWidget {
                                         textAlign: TextAlign.right,
                                         style: const TextStyle(
                                           color: kText,
-                                          fontSize: 30 / 1.35,
+                                          fontSize: 22,
                                           fontWeight: FontWeight.w900,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 6),
                                       const Text(
-                                        'Classic Burger',
+                                        'تفاصيل الصنف',
                                         textAlign: TextAlign.right,
                                         style: TextStyle(
                                           color: kMuted,
@@ -126,11 +118,33 @@ class ItemDetailView extends StatelessWidget {
                                     ],
                                   ),
                                 ),
+                                const SizedBox(width: 14),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 3),
+                                  child: Text(
+                                    '${item.price.toStringAsFixed(0)} د.ل',
+                                    style: const TextStyle(
+                                      color: kPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 14),
                             Row(
+                              textDirection: TextDirection.rtl,
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
+                                Text(
+                                  '(${c.comments.length} تقييم)',
+                                  style: const TextStyle(
+                                    color: kMuted,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
@@ -141,10 +155,11 @@ class ItemDetailView extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Text(
-                                        '4.8',
-                                        style: TextStyle(
+                                      Text(
+                                        avg.toStringAsFixed(1),
+                                        style: const TextStyle(
                                           fontWeight: FontWeight.w800,
                                           color: kText,
                                           fontSize: 12,
@@ -159,15 +174,6 @@ class ItemDetailView extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  '(${c.comments.length} تقييم)',
-                                  style: const TextStyle(
-                                    color: kMuted,
-                                    fontSize: 12.5,
-                                  ),
-                                ),
-                                const Spacer(),
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -179,30 +185,40 @@ class ItemDetailView extends StatelessWidget {
                               style: const TextStyle(
                                 color: kMuted,
                                 fontSize: 14,
-                                height: 1.65,
+                                height: 1.8,
                               ),
                             ),
                             const SizedBox(height: 18),
-                            const Text(
-                              'الإضافات',
-                              style: TextStyle(
-                                color: kText,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
+                            const Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'الإضافات',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: kText,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 10),
                             Obx(() {
                               final list = c.additions;
                               if (list.isEmpty) {
-                                return const Text(
-                                  'لا توجد إضافات لهذا الصنف',
-                                  style: TextStyle(color: kMuted),
+                                return const SizedBox(
+                                  width: double.infinity,
+                                  child: Text(
+                                    'لا توجد إضافات لهذا الصنف',
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(color: kMuted),
+                                  ),
                                 );
                               }
                               return Wrap(
+                                textDirection: TextDirection.rtl,
                                 spacing: 10,
                                 runSpacing: 10,
+                                alignment: WrapAlignment.end,
                                 children: List.generate(list.length, (i) {
                                   final a = list[i];
                                   return _AddonChip(
@@ -215,17 +231,22 @@ class ItemDetailView extends StatelessWidget {
                               );
                             }),
                             const SizedBox(height: 18),
-                            const Text(
-                              'الكمية',
-                              style: TextStyle(
-                                color: kText,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
+                            const Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'الكمية',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: kText,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 10),
                             Obx(
                               () => Row(
+                                textDirection: TextDirection.rtl,
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   _QtyCircle(
@@ -254,12 +275,16 @@ class ItemDetailView extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            const Text(
-                              'التعليقات',
-                              style: TextStyle(
-                                color: kText,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
+                            const Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'التعليقات',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: kText,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -272,9 +297,13 @@ class ItemDetailView extends StatelessWidget {
                                 );
                               }
                               if (c.comments.isEmpty) {
-                                return const Text(
-                                  'لا توجد تعليقات بعد',
-                                  style: TextStyle(color: kMuted),
+                                return const SizedBox(
+                                  width: double.infinity,
+                                  child: Text(
+                                    'لا توجد تعليقات بعد',
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(color: kMuted),
+                                  ),
                                 );
                               }
                               return Column(
@@ -294,6 +323,7 @@ class ItemDetailView extends StatelessWidget {
                                       children: [
                                         Text(
                                           cm.userName,
+                                          textAlign: TextAlign.right,
                                           style: const TextStyle(
                                             color: kText,
                                             fontWeight: FontWeight.w800,
@@ -339,7 +369,20 @@ class ItemDetailView extends StatelessWidget {
                     ),
                   ),
                   child: Row(
+                    textDirection: TextDirection.rtl,
                     children: [
+                      Obx(
+                        () => Text(
+                          '${c.total.toStringAsFixed(0)} د.ل',
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            color: kPrimary,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Obx(
                           () => ElevatedButton(
@@ -365,17 +408,6 @@ class ItemDetailView extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Obx(
-                        () => Text(
-                          '${c.total.toStringAsFixed(0)} ر.س',
-                          style: const TextStyle(
-                            color: kPrimary,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -394,6 +426,7 @@ class _CircleBtn extends StatelessWidget {
     required this.color,
     required this.onTap,
   });
+
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
@@ -419,6 +452,7 @@ class _AddonChip extends StatelessWidget {
     required this.selected,
     required this.onTap,
   });
+
   final String title;
   final double price;
   final bool selected;
@@ -444,6 +478,7 @@ class _AddonChip extends StatelessWidget {
           children: [
             Text(
               title,
+              textAlign: TextAlign.right,
               style: const TextStyle(
                 color: ItemDetailView.kText,
                 fontWeight: FontWeight.w800,
@@ -451,7 +486,8 @@ class _AddonChip extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '+${price.toStringAsFixed(0)} ر.س',
+              '+${price.toStringAsFixed(0)} د.ل',
+              textAlign: TextAlign.right,
               style: const TextStyle(
                 color: ItemDetailView.kPrimary,
                 fontSize: 12,
@@ -471,6 +507,7 @@ class _QtyCircle extends StatelessWidget {
     required this.onTap,
     this.filled = false,
   });
+
   final IconData icon;
   final VoidCallback onTap;
   final bool filled;

@@ -9,27 +9,19 @@ import 'package:latlong2/latlong.dart';
 class OrderTrackingView extends StatelessWidget {
   const OrderTrackingView({super.key});
 
-  // 🎨 نفس جو "طلباتي"
-  static const Color kPrimary = Color(0xFF6F3F17); // البني الثقيل
-  static const Color kBg = Color(0xFFF7F4EF);      // خلفية كريمية
-  static const Color kCard = Colors.white;         // كروت بيضاء ناعمة;
-  static const Color kTimelineBg = Color(0xFFF0E4D7);
-  static const Color kDriverAccent = Color(0xFFFFA726); // لون خفيف للشاحنة
+  static const Color kPrimary = Color(0xFFFF5A00);
+  static const Color kPrimaryDark = Color(0xFFFF2E00);
+  static const Color kBg = Color(0xFFF5F5F7);
+  static const Color kCard = Colors.white;
+  static const Color kText = Color(0xFF111827);
+  static const Color kMuted = Color(0xFF8B95A7);
+  static const Color kSoftOrange = Color(0xFFFFF1E9);
+  static const Color kDriverAccent = Color(0xFFFFA726);
 
   @override
   Widget build(BuildContext context) {
     final c = Get.put(OrderTrackingController());
-
-    // NEW: MapController لتحريك الخريطة تلقائيًا
     final mapCtrl = fm.MapController();
-
-    // 🌓 ثيم
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    const brown = Color(0xFF6F3F17);
-    final Color primaryIconColor = isDark ? brown : kPrimary;
-    final Color bgColor = isDark ? theme.scaffoldBackgroundColor : kBg;
-    final Color cardColor = isDark ? theme.cardColor : kCard;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -37,34 +29,35 @@ class OrderTrackingView extends StatelessWidget {
         final current = c.stepIndex.value.clamp(0, 3);
         final st = c.status.value;
 
-        // لو فيه موقع سائق .. حرّك الخريطة فورًا عليه
         final LatLng? dpos = c.driverPos.value;
         if (dpos != null) {
-          // تحريك خفيف بدون أي حذف أو تغيير في البنية
           Future.microtask(() {
             mapCtrl.move(dpos, 15);
           });
         }
 
         final LatLng fallbackCenter = const LatLng(31.206518, 16.588744);
-        final LatLng center = dpos ??
-            c.destPos.value ??
-            c.pickupPos.value ??
-            fallbackCenter;
+        final LatLng center =
+            dpos ?? c.destPos.value ?? c.pickupPos.value ?? fallbackCenter;
 
-        // markers بإصدار flutter_map 7.x يستخدم child بدل builder
         final List<fm.Marker> markers = <fm.Marker>[];
 
         if (c.pickupPos.value != null) {
           markers.add(
             fm.Marker(
               point: c.pickupPos.value!,
-              width: 36,
-              height: 36,
-              child: const Icon(
-                Icons.store_mall_directory,
-                color: brown,
-                size: 28,
+              width: 40,
+              height: 40,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.store_mall_directory_rounded,
+                  color: kPrimary,
+                  size: 24,
+                ),
               ),
             ),
           );
@@ -74,12 +67,18 @@ class OrderTrackingView extends StatelessWidget {
           markers.add(
             fm.Marker(
               point: c.destPos.value!,
-              width: 36,
-              height: 36,
-              child: const Icon(
-                Icons.home_filled,
-                color: Colors.greenAccent,
-                size: 28,
+              width: 40,
+              height: 40,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.home_rounded,
+                  color: Colors.green,
+                  size: 24,
+                ),
               ),
             ),
           );
@@ -89,142 +88,211 @@ class OrderTrackingView extends StatelessWidget {
           markers.add(
             fm.Marker(
               point: dpos,
-              width: 42,
-              height: 42,
-              child: const Icon(
-                Icons.local_shipping_rounded,
-                color: kDriverAccent,
-                size: 34,
+              width: 44,
+              height: 44,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.local_shipping_rounded,
+                  color: kDriverAccent,
+                  size: 28,
+                ),
               ),
             ),
           );
         }
 
         return Scaffold(
-          backgroundColor: bgColor,
+          backgroundColor: kBg,
           appBar: AppBar(
-            backgroundColor: bgColor,
+            backgroundColor: kBg,
             elevation: 0,
             centerTitle: true,
-            title: Text(
-              'تتبّع الطلب',
+            title: const Text(
+              'تتبع الطلب',
               style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-                color: primaryIconColor,
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                color: kPrimary,
               ),
             ),
-            iconTheme: IconThemeData(color: primaryIconColor),
+            iconTheme: const IconThemeData(color: kPrimary),
           ),
           body: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
                 child: _TrackingTimeline(
                   currentStep: current,
-                  activeColor: primaryIconColor,
-                  inactiveColor: brown.withOpacity(.25),
+                  activeColor: kPrimary,
+                  inactiveColor: const Color(0xFFFFD8C2),
                   labels: const [
                     'تم تقديم\nالطلب',
                     'تم تأكيد\nالطلب',
-                    'تحضير\nالسّلعة',
-                    'التسليم\nفي الطريق',
+                    'قيد التحضير',
+                    'في الطريق',
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // كرت رقم الطلب + الحالة (بنفس روح "طلباتي")
+              const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(16),
+                    color: kCard,
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.4 : 0.05),
+                        color: Colors.black.withOpacity(.04),
                         blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 12,
+                    vertical: 14,
                   ),
                   child: Row(
+                    textDirection: TextDirection.rtl,
                     children: [
-                      Icon(Icons.receipt_long, color: primaryIconColor),
-                      const SizedBox(width: 10),
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: const BoxDecoration(
+                          color: kSoftOrange,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          onPressed: () => c.onReady(),
+                          icon: const Icon(
+                            Icons.refresh_rounded,
+                            color: kPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
                               'رقم الطلب: ${c.orderId.value ?? "-"}',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87,
-                                fontWeight: FontWeight.w700,
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                color: kText,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               c.arabicStatus,
-                              style: TextStyle(
-                                color:
-                                    isDark ? Colors.white70 : Colors.black54,
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                color: kMuted,
                                 fontSize: 13,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      InkWell(
-                        onTap: () => c.onReady(), // تحديث سريع
-                        child: CircleAvatar(
-                          backgroundColor:
-                              isDark ? Colors.black54 : kBg,
-                          child: Icon(
-                            Icons.refresh,
-                            color: primaryIconColor,
-                          ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
                         ),
-                      )
+                        decoration: BoxDecoration(
+                          color: kSoftOrange,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.receipt_long_rounded,
+                          color: kPrimary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 14),
-
-              // الخريطة (OSM) داخل كرت ناعم
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(22),
                     child: Stack(
                       children: [
-                        fm.FlutterMap(
-                          mapController: mapCtrl, // NEW
-                          key: ValueKey(
-                            '${center.latitude},${center.longitude},${markers.length}',
+                        Container(
+                          decoration: BoxDecoration(
+                            color: kCard,
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(.04),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
                           ),
-                          options: fm.MapOptions(
-                            initialCenter: center,
-                            initialZoom: 13,
-                          ),
-                          children: [
-                            fm.TileLayer(
-                              urlTemplate:
-                                  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              subdomains: const ['a', 'b', 'c'],
-                              userAgentPackageName: 'com.evoranta.app',
+                          child: fm.FlutterMap(
+                            mapController: mapCtrl,
+                            key: ValueKey(
+                              '${center.latitude},${center.longitude},${markers.length}',
                             ),
-                            fm.MarkerLayer(markers: markers),
-                          ],
+                            options: fm.MapOptions(
+                              initialCenter: center,
+                              initialZoom: 13,
+                            ),
+                            children: [
+                              fm.TileLayer(
+                                urlTemplate:
+                                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                subdomains: const ['a', 'b', 'c'],
+                                userAgentPackageName: 'com.evoranta.app',
+                              ),
+                              fm.MarkerLayer(markers: markers),
+                            ],
+                          ),
                         ),
-
+                        Positioned(
+                          right: 12,
+                          top: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(.95),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              textDirection: TextDirection.rtl,
+                              children: [
+                                const Icon(
+                                  Icons.location_searching_rounded,
+                                  color: kPrimary,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  c.arabicStatus,
+                                  style: const TextStyle(
+                                    color: kText,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                         if (st == 'rejected' || st == 'cancelled')
                           _statusBanner('تم إلغاء الطلب', Colors.red),
                         if (st == 'delivered')
@@ -234,13 +302,13 @@ class OrderTrackingView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
             ],
           ),
           floatingActionButton: FloatingActionButton(
-            backgroundColor: primaryIconColor,
+            backgroundColor: kPrimary,
             onPressed: () => c.onReady(),
-            child: const Icon(Icons.refresh, color: Colors.white),
+            child: const Icon(Icons.refresh_rounded, color: Colors.white),
           ),
         );
       }),
@@ -251,15 +319,18 @@ class OrderTrackingView extends StatelessWidget {
     return Align(
       alignment: Alignment.topCenter,
       child: Container(
-        margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
           color: color.withOpacity(.95),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Text(
           text,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -267,7 +338,7 @@ class OrderTrackingView extends StatelessWidget {
 }
 
 class _TrackingTimeline extends StatelessWidget {
-  final int currentStep; // 0..3
+  final int currentStep;
   final List<String> labels;
   final Color activeColor;
   final Color inactiveColor;
@@ -281,19 +352,22 @@ class _TrackingTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final Color bg =
-        isDark ? theme.cardColor.withOpacity(0.25) : OrderTrackingView.kTimelineBg;
-
     return Container(
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
+        color: OrderTrackingView.kCard,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
+        textDirection: TextDirection.rtl,
         children: List.generate(labels.length * 2 - 1, (i) {
           if (i.isOdd) {
             final leftIndex = (i - 1) ~/ 2;
@@ -301,7 +375,7 @@ class _TrackingTimeline extends StatelessWidget {
             return Expanded(
               child: Container(
                 margin: const EdgeInsets.only(top: 11),
-                height: 2,
+                height: 3,
                 decoration: BoxDecoration(
                   color: done ? activeColor : inactiveColor,
                   borderRadius: BorderRadius.circular(2),
@@ -339,39 +413,41 @@ class _StepNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    const brown = Color(0xFF6F3F17);
-
-    final circleColor = active ? activeColor : inactiveColor;
-    final textColor = isDark
-        ? brown
-        : (active ? OrderTrackingView.kPrimary : Colors.brown[300]);
-
     return Column(
       children: [
         Container(
-          width: 22,
-          height: 22,
+          width: 24,
+          height: 24,
           decoration: BoxDecoration(
-            color: circleColor,
+            color: active ? activeColor : inactiveColor,
             shape: BoxShape.circle,
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: activeColor.withOpacity(.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: active
-              ? const Icon(Icons.check, size: 14, color: Colors.white)
+              ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
               : null,
         ),
         const SizedBox(height: 6),
         SizedBox(
-          width: 70,
+          width: 72,
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: textColor,
+              color: active
+                  ? OrderTrackingView.kPrimary
+                  : OrderTrackingView.kMuted,
               fontSize: 11,
-              height: 1.2,
-              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              height: 1.25,
+              fontWeight: active ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
         ),

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // ← للكاش
 import '../../data/models/item.dart';
 import '../../core/api_service.dart';
 import '../../core/session.dart';
+import '../favorites/favorites_controller.dart';
 import '../cart/cart_controller.dart';
 
 // ================== 🆕 منطق الحساب التجريبي ==================
@@ -593,6 +594,9 @@ class ItemDetailController extends GetxController {
         }
 
         isFavorite.value = false;
+        if (Get.isRegistered<FavoritesController>()) {
+          Get.find<FavoritesController>().markFavoriteRemoved(item.id);
+        }
         _showInfo('تمت إزالة المنتج من المفضلة', title: 'المفضلة');
       } else {
         // ===========================
@@ -609,6 +613,12 @@ class ItemDetailController extends GetxController {
         }
 
         isFavorite.value = true;
+        if (Get.isRegistered<FavoritesController>()) {
+          Get.find<FavoritesController>().markFavoriteAdded(
+            item.id,
+            itemData: item.toJson(),
+          );
+        }
         _showSuccess('تمت إضافة المنتج إلى المفضلة بنجاح', title: 'تم');
       }
     } catch (e) {
@@ -683,19 +693,16 @@ class ItemDetailController extends GetxController {
           .map((e) => e.id)
           .toList();
 
-      final res = await _api.postForm(
-        'add_to_cart.php',
-        {
-          'user_id': '$_userId',
-          'item_id': '${item.id}',
-          'quantity': '${qty.value}',
-          'qty': '${qty.value}',
-          'additions': selectedAdds.join(','),
-          'removals': selectedRems.join(','),
-          'selected_components': jsonEncode(selectedAddNames),
-          'components': jsonEncode(selectedAddNames),
-        },
-      );
+      final res = await _api.postForm('add_to_cart.php', {
+        'user_id': '$_userId',
+        'item_id': '${item.id}',
+        'quantity': '${qty.value}',
+        'qty': '${qty.value}',
+        'additions': selectedAdds.join(','),
+        'removals': selectedRems.join(','),
+        'selected_components': jsonEncode(selectedAddNames),
+        'components': jsonEncode(selectedAddNames),
+      });
 
       // ignore: unnecessary_type_check
       if (res is Map && (res['ok'] == true || '${res['ok']}' == '1')) {
@@ -705,8 +712,16 @@ class ItemDetailController extends GetxController {
             : null;
         await cart?.load();
 
-        // 🔥 لا نظهر رسالة نجاح إطلاقاً لو الحساب تجريبي
-        if (!_isDemoUser(_userId, _isDemo)) {}
+        if (!_isDemoUser(_userId, _isDemo)) {
+          _showSnack(
+            bg: const Color(0xFF065F46),
+            title: 'تمت الإضافة',
+            msg: 'تمت إضافة المنتج إلى السلة بنجاح.',
+            actionLabel: 'اذهب للسلة',
+            onAction: () => Get.toNamed('/cart'),
+            seconds: 4,
+          );
+        }
         lastAddSuccess.value = true;
       } else {
         lastAddSuccess.value = false;

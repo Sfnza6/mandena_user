@@ -95,10 +95,10 @@ class BranchController extends GetxController {
       await _box.write(_selectedBranchKey, branchId);
 
       if (Get.isRegistered<CartController>()) {
-        await Get.find<CartController>().clearForBranchChange();
+        await Get.find<CartController>().switchBranchContext();
       }
       if (Get.isRegistered<FavoritesController>()) {
-        await Get.find<FavoritesController>().clearForBranchChange();
+        await Get.find<FavoritesController>().switchBranchContext();
       }
       if (Get.isRegistered<HomeController>()) {
         await Get.find<HomeController>().handleBranchChanged();

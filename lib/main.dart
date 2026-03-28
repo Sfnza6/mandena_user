@@ -132,16 +132,19 @@ class mandenaApp extends StatelessWidget {
 
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'EVORANTA',
+      title: 'ماندينا',
 
       // ✅ نحصر تكبير/تصغير الخط في مدى آمن لكل التطبيق
       builder: (context, child) {
         final mq = MediaQuery.of(context);
         final safeTextScale = mq.textScaleFactor.clamp(0.9, 1.1);
 
-        return MediaQuery(
-          data: mq.copyWith(textScaler: TextScaler.linear(safeTextScale)),
-          child: child ?? const SizedBox.shrink(),
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: MediaQuery(
+            data: mq.copyWith(textScaler: TextScaler.linear(safeTextScale)),
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
 

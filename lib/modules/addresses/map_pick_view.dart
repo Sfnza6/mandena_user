@@ -19,7 +19,8 @@ class MapPickView extends StatelessWidget {
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           backgroundColor:
-              theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
+              theme.appBarTheme.backgroundColor ??
+              theme.scaffoldBackgroundColor,
           elevation: 0.5,
           centerTitle: true,
           title: Text(
@@ -31,7 +32,9 @@ class MapPickView extends StatelessWidget {
                   : Colors.black87,
             ),
           ),
-          iconTheme: const IconThemeData(color: _brown),
+          iconTheme: const IconThemeData(
+            color: Color.fromARGB(255, 233, 85, 0),
+          ),
           actions: [
             Obx(
               () => IconButton(
@@ -47,7 +50,7 @@ class MapPickView extends StatelessWidget {
                       )
                     : const Icon(
                         Icons.my_location_outlined,
-                        color: _brown,
+                        color: Color(0xFFFF5A00),
                       ),
               ),
             ),
@@ -75,7 +78,7 @@ class MapPickView extends StatelessWidget {
                       child: const Icon(
                         Icons.location_on,
                         size: 40,
-                        color: _brown,
+                        color: Color(0xFFFF5A00),
                       ),
                     ),
                   ],
@@ -88,10 +91,13 @@ class MapPickView extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: ElevatedButton.icon(
               onPressed: c.confirm,
-              icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+              icon: const Icon(
+                Icons.check_circle_outline,
+                color: Color(0xFFFF5A00),
+              ),
               label: const Text('تأكيد هذا الموقع'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _brown,
+                backgroundColor: Color(0xFFFF5A00),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(

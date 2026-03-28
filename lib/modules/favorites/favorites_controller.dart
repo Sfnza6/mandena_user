@@ -186,17 +186,69 @@ class FavoritesController extends GetxController {
   }
 
   Future<void> clearForBranchChange() async {
-    try {
-      for (final k in _box.getKeys()) {
-        if ('$k'.startsWith(_favCachePrefix)) {
-          await _box.remove('$k');
-        }
-      }
-    } catch (_) {}
+    await switchBranchContext();
+  }
 
+  Future<void> switchBranchContext() async {
     favorites.clear();
     favIds.clear();
+
+    if (_userId != null && _userId! > 0) {
+      _loadCached();
+      await load();
+    }
+
     update();
+  }
+
+  bool isFavorite(int itemId) => favIds.contains(itemId);
+
+  void markFavoriteAdded(int itemId, {Map<String, dynamic>? itemData}) {
+    favIds.add(itemId);
+
+    if (itemData != null) {
+      final normalized = Map<String, dynamic>.from(itemData);
+      normalized['item_id'] =
+          normalized['item_id'] ?? normalized['id'] ?? itemId;
+
+      final index = favorites.indexWhere(
+        (e) => (int.tryParse('${e['item_id'] ?? e['id'] ?? 0}') ?? 0) == itemId,
+      );
+
+      if (index >= 0) {
+        favorites[index] = normalized;
+      } else {
+        favorites.insert(0, normalized);
+      }
+    }
+
+    favorites.refresh();
+    favIds.refresh();
+    _cacheFavorites();
+    update();
+  }
+
+  void markFavoriteRemoved(int itemId) {
+    favIds.remove(itemId);
+    favorites.removeWhere(
+      (e) => (int.tryParse('${e['item_id'] ?? e['id'] ?? 0}') ?? 0) == itemId,
+    );
+    favorites.refresh();
+    favIds.refresh();
+    _cacheFavorites();
+    update();
+  }
+
+  Future<void> toggleFromHome(ItemModel item) async {
+    final itemId = item.id;
+    final wasFav = isFavorite(itemId);
+    await toggle(itemId);
+
+    if (!wasFav && isFavorite(itemId)) {
+      markFavoriteAdded(itemId, itemData: item.toJson());
+    } else if (wasFav && !isFavorite(itemId)) {
+      markFavoriteRemoved(itemId);
+    }
   }
 
   @override
@@ -225,7 +277,7 @@ class FavoritesController extends GetxController {
     try {
       final r = await _api.get(
         'get_favorites.php',
-        params: {'user_id': '$_userId'},
+        params: {'user_id': '$_userId', 'branch_id': '${_currentBranchId()}'},
       );
       if (r['ok'] == true) {
         final list = (r['favorites'] as List).cast<Map<String, dynamic>>();
@@ -270,7 +322,11 @@ class FavoritesController extends GetxController {
         try {
           await _api.post(
             'remove_favorite.php',
-            body: {'user_id': '$_userId', 'item_id': '$itemId'},
+            body: {
+              'user_id': '$_userId',
+              'item_id': '$itemId',
+              'branch_id': '${_currentBranchId()}',
+            },
           );
           _showInfo('أُزيل من المفضلة', title: 'تم');
           _cacheFavorites();
@@ -284,7 +340,11 @@ class FavoritesController extends GetxController {
         try {
           await _api.post(
             'add_favorite.php',
-            body: {'user_id': '$_userId', 'item_id': '$itemId'},
+            body: {
+              'user_id': '$_userId',
+              'item_id': '$itemId',
+              'branch_id': '${_currentBranchId()}',
+            },
           );
           // نعيد التحميل لضمان التزامن مع السيرفر
           await load();
