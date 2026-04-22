@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../home_controller.dart';
 import '../widgets/food_card.dart';
+import '../widgets/hero_tags.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/top_rated_tile.dart';
 import '../../../data/models/item.dart';
@@ -27,7 +28,7 @@ class ItemsPage extends StatelessWidget {
     return rem < 0 ? 0 : rem;
   }
 
-  void _openItemDetail(ItemModel item) {
+  void _openItemDetail(ItemModel item, String heroTag) {
     if (!item.isActive) {
       Get.snackbar(
         'غير متوفر',
@@ -46,7 +47,10 @@ class ItemsPage extends StatelessWidget {
       return;
     }
 
-    Get.toNamed(AppRoutes.itemDetail, arguments: item.toJson());
+    Get.toNamed(
+      AppRoutes.itemDetail,
+      arguments: withItemHeroArg(item.toJson(), heroTag),
+    );
   }
 
   @override
@@ -94,8 +98,14 @@ class ItemsPage extends StatelessWidget {
                       final soldOut = _isSoldOut(item);
                       final remain = _remaining(item);
 
+                      final heroTag = itemHeroTagFromModel(
+                        item,
+                        scope: 'items-page-most-ordered',
+                        extra: i,
+                      );
+
                       return PressableScale(
-                        onTap: () => _openItemDetail(item),
+                        onTap: () => _openItemDetail(item, heroTag),
                         child: Obx(
                           () => FoodCard(
                             item: item,
@@ -107,6 +117,7 @@ class ItemsPage extends StatelessWidget {
                             onAddToCart: (!soldOut && item.isActive)
                                 ? () => c.addItemToCart(item)
                                 : null,
+                            heroTag: heroTag,
                           ),
                         ),
                       );
@@ -144,8 +155,14 @@ class ItemsPage extends StatelessWidget {
                     final soldOut = _isSoldOut(item);
                     final remain = _remaining(item);
 
+                    final heroTag = itemHeroTagFromModel(
+                      item,
+                      scope: 'items-page-top-rated',
+                      extra: c,
+                    );
+
                     return PressableScale(
-                      onTap: () => _openItemDetail(item),
+                      onTap: () => _openItemDetail(item, heroTag),
                       child: Obx(
                         () => TopRatedTile(
                           item: item,
@@ -157,6 +174,7 @@ class ItemsPage extends StatelessWidget {
                           onAddToCart: (!soldOut && item.isActive)
                               ? () => c.addItemToCart(item)
                               : null,
+                          heroTag: heroTag,
                         ),
                       ),
                     );

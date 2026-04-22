@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io'; // ✅ لتمييز أخطاء الشبكة (SocketException)
+import 'dart:io';
 import 'package:get/get.dart';
 import 'package:mandena/core/api_service.dart';
 import 'package:mandena/core/env.dart';
 import 'package:mandena/core/session.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // ✅ للكاش
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// موديل إضافة (صوص/جبنة...) لعنصر داخل الطلب
 class OrderExtraModel {
   final String name;
   final int quantity;
@@ -32,7 +31,6 @@ class OrderExtraModel {
         : (double.tryParse('${j['line_total']}') ?? 0.0),
   );
 
-  // ✅ للكاش
   Map<String, dynamic> toJson() => {
     'name': name,
     'quantity': quantity,
@@ -41,12 +39,11 @@ class OrderExtraModel {
   };
 }
 
-/// موديل لمكوّن (مضاف/محذوف)
 class OrderComponentModel {
   final int id;
   final String name;
   final int quantity;
-  final double price; // للمحذوف عادة 0
+  final double price;
 
   OrderComponentModel({
     required this.id,
@@ -65,7 +62,6 @@ class OrderComponentModel {
             : (double.tryParse('${j['price']}') ?? 0.0),
       );
 
-  // ✅ للكاش
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -74,7 +70,6 @@ class OrderComponentModel {
   };
 }
 
-/// عنصر (وجبة) داخل الطلب
 class OrderItemModel {
   final int orderItemId;
   final int itemId;
@@ -84,8 +79,6 @@ class OrderItemModel {
   final double lineTotal;
   final double lineTotalWithExtras;
   final List<OrderExtraModel> extras;
-
-  /// المكونات (المضافة تُحتسب، المحذوفة بلا سعر)
   final List<OrderComponentModel> componentsAdd;
   final List<OrderComponentModel> componentsRem;
 
@@ -103,11 +96,9 @@ class OrderItemModel {
   });
 
   factory OrderItemModel.fromJson(Map<String, dynamic> j) {
-    // أولاً: نقرأ معرّفات هذا السطر كي نستخدمها في الفلترة
     final orderItemId = int.tryParse('${j['order_item_id']}') ?? 0;
     final itemId = int.tryParse('${j['item_id']}') ?? 0;
 
-    // مساعد لتحويل أي قيمة إلى List (حتى لو جاءت كنص JSON)
     List asList(v) {
       if (v is List) return v;
       if (v is String && v.trim().startsWith('[')) {
@@ -118,7 +109,6 @@ class OrderItemModel {
       return const [];
     }
 
-    // NEW: اختيار قائمة من عدّة مفاتيح محتملة
     List pickList(Map<String, dynamic> src, List<String> keys) {
       for (final k in keys) {
         if (src.containsKey(k) && src[k] != null) {
@@ -130,18 +120,15 @@ class OrderItemModel {
       return const [];
     }
 
-    // دالة مطابقة عنصر مُدخل مع هذا السطر
     bool belongsToThisItem(Map<String, dynamic> m) {
       final oi =
           int.tryParse('${m['order_item_id'] ?? m['oi_id'] ?? ''}') ?? -1;
       final ii = int.tryParse('${m['item_id'] ?? m['itemId'] ?? ''}') ?? -1;
       if (oi > 0) return oi == orderItemId;
       if (ii > 0) return ii == itemId;
-      // لو ما في مؤشّر، نعتبره يخص هذا السطر فقط إذا لم تُرسل قوائم عامة
       return true;
     }
 
-    // الإضافات
     final extrasList = (j['extras'] is List)
         ? (j['extras'] as List)
               .map(
@@ -150,7 +137,6 @@ class OrderItemModel {
               .toList()
         : const <OrderExtraModel>[];
 
-    // NEW: المكونات — ندعم مفاتيح متعددة لكل نوع
     final rawAdd = pickList(j, const [
       'components_add',
       'componentsAdd',
@@ -162,7 +148,6 @@ class OrderItemModel {
       'components_removed',
     ]).map((e) => Map<String, dynamic>.from(e as Map)).toList();
 
-    // فلترة حسب order_item_id / item_id
     final compsAdd = rawAdd
         .where(belongsToThisItem)
         .map((e) => OrderComponentModel.fromJson(e))
@@ -173,7 +158,6 @@ class OrderItemModel {
         .map((e) => OrderComponentModel.fromJson(e))
         .toList();
 
-    // مجموع احتياطي لو line_total_with_extras جاء صفر
     final lineTotalVal = (j['line_total'] is num)
         ? (j['line_total'] as num).toDouble()
         : (double.tryParse('${j['line_total']}') ?? 0.0);
@@ -208,7 +192,6 @@ class OrderItemModel {
     );
   }
 
-  // ✅ للكاش
   Map<String, dynamic> toJson() => {
     'order_item_id': orderItemId,
     'item_id': itemId,
@@ -223,23 +206,18 @@ class OrderItemModel {
   };
 }
 
-/// رأس الطلب
 class OrderHeaderModel {
   final int id;
   final int userId;
   final int driverId;
-  final String status; // pending / processing / assigned...
-  final String statusOrder; // pickup / delivery
-  final double total; // قد يكون 0 من السيرفر
+  final String status;
+  final String statusOrder;
+  final double total;
   final String address;
   final String createdAt;
   final double deliveryFee;
-  final double grandTotal; // (extras + delivery) إن أرسله السيرفر
-
-  /// ✅ نوع طريقة الدفع (0 = عند الاستلام، 1 = أونلاين ...)
+  final double grandTotal;
   final int paymentMethod;
-
-  /// ✅ اسم / مفتاح البوابة أو المصرف (مثلاً: صحاري باي)
   final String gateway;
 
   OrderHeaderModel({
@@ -279,7 +257,6 @@ class OrderHeaderModel {
     gateway: (j['gateway'] ?? '').toString(),
   );
 
-  // ✅ للكاش
   Map<String, dynamic> toJson() => {
     'id': id,
     'user_id': userId,
@@ -302,12 +279,11 @@ class OrderDetailsController extends GetxController {
   final loading = false.obs;
   final header = Rxn<OrderHeaderModel>();
   final items = <OrderItemModel>[].obs;
-  final driver = Rxn<Map<String, dynamic>>(); // {id,name,phone}
+  final driver = Rxn<Map<String, dynamic>>();
 
   late int orderId;
   int? userId;
 
-  // ========= كاش تفاصيل الطلب =========
   String get _cacheKey => 'order_details_${orderId}_${userId ?? 0}';
 
   Future<void> _saveCache() async {
@@ -321,9 +297,7 @@ class OrderDetailsController extends GetxController {
         'driver': driver.value,
       };
       await sp.setString(_cacheKey, jsonEncode(data));
-    } catch (_) {
-      // تجاهل
-    }
+    } catch (_) {}
   }
 
   Future<void> _loadCache() async {
@@ -360,17 +334,13 @@ class OrderDetailsController extends GetxController {
       } else {
         driver.value = null;
       }
-    } catch (_) {
-      // تجاهل
-    }
+    } catch (_) {}
   }
-  // =====================================
 
   @override
   void onInit() {
     super.onInit();
     final args = Get.arguments;
-    // ✅ دعم مفاتيح متعددة
     orderId =
         int.tryParse(
           '${args?['orderId'] ?? args?['order_id'] ?? args?['id'] ?? 0}',
@@ -382,21 +352,18 @@ class OrderDetailsController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    // ✅ حاول تعرض آخر نسخة من الكاش أولاً
     _loadCache();
     fetch();
   }
 
   Future<void> fetch() async {
     if (orderId <= 0) {
-      // ✅ رسالة ودّية بدلاً من تقنية
       Get.snackbar('تنبيه', 'رقم الطلب غير صحيح. حاول فتح الطلب من جديد.');
       return;
     }
+
     try {
       loading(true);
-
-      // تحقّق ملكية (اختياري)
       userId ??= await Session.userId();
 
       final res = await _api.get(
@@ -404,14 +371,12 @@ class OrderDetailsController extends GetxController {
         params: {
           'order_id': '$orderId',
           if (userId != null) 'user_id': '$userId',
-          // كسر كاش
           't': '${DateTime.now().millisecondsSinceEpoch}',
         },
       );
 
       final root = res is String ? jsonDecode(res) : res;
       if ((root['status'] ?? '').toString().toLowerCase() != 'success') {
-        // ✅ رسالة احترافية عند فشل الاستجابة (مع رسالة السيرفر إن وُجدت)
         final msg = (root['message'] ?? '').toString().trim();
         Get.snackbar(
           'تعذّر التحميل',
@@ -422,7 +387,6 @@ class OrderDetailsController extends GetxController {
         header.value = null;
         items.clear();
         driver.value = null;
-        // لو فشل، حاول تعيد عرض الكاش (إن وجد)
         await _loadCache();
         return;
       }
@@ -441,22 +405,18 @@ class OrderDetailsController extends GetxController {
           ? null
           : Map<String, dynamic>.from(data['driver']);
 
-      // ✅ حفظ تفاصيل الطلب في الكاش
       await _saveCache();
     } catch (e) {
-      // ✅ رسالة ودّية بدل التقنية
       Get.snackbar('تنبيه', _friendlyError(e));
       header.value = null;
       items.clear();
       driver.value = null;
-      // وحاول تعرض آخر نسخة مخزّنة
       await _loadCache();
     } finally {
       loading(false);
     }
   }
 
-  /// مجموع أصناف الطلب شامل الإضافات + المكونات المُضافة
   double get itemsTotal {
     if (items.isEmpty) return 0.0;
     return items.fold<double>(
@@ -467,7 +427,6 @@ class OrderDetailsController extends GetxController {
     );
   }
 
-  /// الإجمالي النهائي (إن لم يرسله السيرفر)
   double get computedGrandTotal {
     final h = header.value;
     if (h == null) return 0.0;
@@ -486,12 +445,34 @@ class OrderDetailsController extends GetxController {
     }
   }
 
-  // ========= معلومات الدفع ===========
+  String statusArabic(String key) {
+    switch (key.toLowerCase().trim()) {
+      case 'pending':
+        return 'قيد الانتظار';
+      case 'processing':
+        return 'قيد المعالجة';
+      case 'accepted':
+        return 'تم القبول';
+      case 'assigned':
+        return 'تم إسناده للسائق';
+      case 'delivered':
+        return 'تم التسليم';
+      case 'rejected':
+        return 'مرفوض';
+      case 'cancelled':
+      case 'canceled':
+        return 'ملغي';
+      case 'pickup':
+        return 'استلام';
+      case 'delivery':
+        return 'توصيل';
+      default:
+        return key;
+    }
+  }
 
-  /// هل الدفع أونلاين؟
   bool isOnlinePayment(OrderHeaderModel h) => h.paymentMethod == 1;
 
-  /// نص طريقة الدفع + اسم المصرف
   String paymentMethodText(OrderHeaderModel h) {
     if (isOnlinePayment(h)) {
       final gw = h.gateway.trim();
@@ -504,7 +485,6 @@ class OrderDetailsController extends GetxController {
     }
   }
 
-  /// رسالة توضيح إضافية عند الدفع أونلاين
   String onlinePaymentNote(OrderHeaderModel h) {
     final gw = h.gateway.trim();
     final bankText = gw.isNotEmpty ? ' ($gw)' : '';
@@ -512,7 +492,6 @@ class OrderDetailsController extends GetxController {
         'في حال حدوث أي مشكلة في عملية الخصم سيتم التواصل معك من قبل المطعم.';
   }
 
-  // ================== رسائل ودّية للأخطاء (بدون تغيير المنطق) ==================
   String _friendlyError(Object e) {
     final t = e.toString().toLowerCase();
 

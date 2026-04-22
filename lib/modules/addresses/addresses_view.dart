@@ -11,6 +11,7 @@ class AddressesView extends StatelessWidget {
   static const _primary = Color(0xFFFF5A00);
   static const _primaryDark = Color(0xFFFF2E00);
   static const _primarySoft = Color(0xFFFFF1E9);
+  // ignore: unused_field
   static const _pageBg = Color(0xFFF5F5F7);
   static const _card = Colors.white;
   static const _text = Color(0xFF111827);
@@ -20,11 +21,13 @@ class AddressesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.put(AddressesController());
+    final theme = Theme.of(context);
+    final pageBg = theme.scaffoldBackgroundColor;
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: _pageBg,
+        backgroundColor: pageBg,
         body: Column(
           children: [
             Container(
@@ -444,16 +447,30 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final textColor = theme.textTheme.bodyLarge?.color ?? AddressesView._text;
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ??
+        AddressesView._muted;
+    final softFill = isDark
+        ? const Color(0xFF1F2937)
+        : AddressesView._primarySoft;
+    final neutralFill = isDark
+        ? const Color(0xFF111827)
+        : const Color(0xFFF5F5F7);
+
     return InkWell(
       onTap: pickMode ? onTap : null,
       borderRadius: const BorderRadius.all(AddressesView._r),
       child: Ink(
         decoration: BoxDecoration(
-          color: AddressesView._card,
+          color: cardColor,
           borderRadius: const BorderRadius.all(AddressesView._r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(.05),
+              color: Colors.black.withOpacity(isDark ? .18 : .05),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -476,10 +493,10 @@ class _AddressCard extends StatelessWidget {
                           child: Text(
                             address.label,
                             textAlign: TextAlign.right,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 18,
-                              color: AddressesView._text,
+                              color: textColor,
                             ),
                           ),
                         ),
@@ -491,7 +508,7 @@ class _AddressCard extends StatelessWidget {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: AddressesView._primarySoft,
+                              color: softFill,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: const Text(
@@ -513,13 +530,13 @@ class _AddressCard extends StatelessWidget {
                                 vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F7),
+                                color: neutralFill,
                                 borderRadius: BorderRadius.circular(999),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'تعيين افتراضي',
                                 style: TextStyle(
-                                  color: AddressesView._muted,
+                                  color: mutedColor,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 11,
                                 ),
@@ -535,8 +552,8 @@ class _AddressCard extends StatelessWidget {
                         child: Text(
                           address.addressText,
                           textAlign: TextAlign.right,
-                          style: const TextStyle(
-                            color: AddressesView._muted,
+                          style: TextStyle(
+                            color: mutedColor,
                             fontSize: 13.2,
                             height: 1.5,
                           ),
@@ -569,7 +586,7 @@ class _AddressCard extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AddressesView._primarySoft,
+                        color: softFill,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -586,7 +603,9 @@ class _AddressCard extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0EE),
+                        color: isDark
+                            ? const Color(0xFF2A1616)
+                            : const Color(0xFFFFF0EE),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -611,10 +630,14 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final softFill = isDark
+        ? const Color(0xFF1F2937)
+        : AddressesView._primarySoft;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AddressesView._primarySoft,
+        color: softFill,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -649,6 +672,13 @@ class _LabeledField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final inputFill = isDark
+        ? const Color(0xFF111827)
+        : const Color(0xFFF9FAFB);
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFE5E7EB);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
@@ -663,13 +693,13 @@ class _LabeledField extends StatelessWidget {
           hintText: hint,
           alignLabelWithHint: true,
           filled: true,
-          fillColor: const Color(0xFFF9FAFB),
+          fillColor: inputFill,
           border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(AddressesView._r),
           ),
-          enabledBorder: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(AddressesView._r),
-            borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: const BorderRadius.all(AddressesView._r),
+            borderSide: BorderSide(color: borderColor),
           ),
           focusedBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(AddressesView._r),
@@ -686,6 +716,16 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.textTheme.bodyLarge?.color ?? AddressesView._text;
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ??
+        AddressesView._muted;
+    final softFill = isDark
+        ? const Color(0xFF1F2937)
+        : AddressesView._primarySoft;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -695,8 +735,8 @@ class _EmptyState extends StatelessWidget {
             Container(
               width: 84,
               height: 84,
-              decoration: const BoxDecoration(
-                color: AddressesView._primarySoft,
+              decoration: BoxDecoration(
+                color: softFill,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -706,20 +746,20 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'لا توجد عناوين بعد',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: FontWeight.w900,
-                color: AddressesView._text,
+                color: textColor,
                 fontSize: 18,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'أضف عنوانك الأول ليصبح الوصول والطلب أسهل وأسرع.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AddressesView._muted, height: 1.6),
+              style: TextStyle(color: mutedColor, height: 1.6),
             ),
           ],
         ),

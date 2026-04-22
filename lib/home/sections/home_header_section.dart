@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mandena/app_routes.dart';
 import 'package:mandena/modules/branch/branch_controller.dart';
 
 import '../home_controller.dart';
@@ -13,6 +12,19 @@ class HomeHeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.find<HomeController>();
     final branch = Get.find<BranchController>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final sheetBg = theme.cardColor;
+    final textColor =
+        theme.textTheme.bodyLarge?.color ?? const Color(0xFF111827);
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ??
+        const Color(0xFF6B7280);
+    final dividerColor = isDark ? Colors.white10 : const Color(0xFFE5E7EB);
+    final tileBg = isDark ? const Color(0xFF1F2937) : const Color(0xFFF8FAFC);
+    final selectedTileBg = isDark
+        ? const Color(0xFF2A1D14)
+        : const Color(0xFFFFF3EC);
 
     return Container(
       decoration: const BoxDecoration(
@@ -57,7 +69,15 @@ class HomeHeaderSection extends StatelessWidget {
                         : Icons.keyboard_arrow_down_rounded,
                     onTap: branch.changing.value
                         ? null
-                        : () => _showBranchSheet(context),
+                        : () => _showBranchSheet(
+                            context,
+                            sheetBg: sheetBg,
+                            textColor: textColor,
+                            mutedColor: mutedColor,
+                            dividerColor: dividerColor,
+                            tileBg: tileBg,
+                            selectedTileBg: selectedTileBg,
+                          ),
                   ),
                 ),
               ),
@@ -80,70 +100,71 @@ class HomeHeaderSection extends StatelessWidget {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.15),
+                        color: Colors.white.withOpacity(.16),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        Icons.local_offer_outlined,
-                        color: Colors.white,
-                        size: 20,
+                        Icons.waving_hand_rounded,
+                        color: Color(0xFFFFE4D0),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'مرحباً بك في مندينا 👋',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 22,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'ماذا ترغب أن نطلبه اليوم؟',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              color: Color(0xFFFFE7D6),
-                              fontSize: 13,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
+                    const Spacer(),
+                    const Text(
+                      'مرحباً بك في ماندينا 👋',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 6),
+                const Text(
+                  'ماذا ترغب أن نطلبه اليوم؟',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: Color(0xFFFFE7D6),
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 InkWell(
-                  onTap: () => Get.toNamed(AppRoutes.search),
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.search_rounded, color: Color(0xFF9CA3AF)),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'ابحث عن طعامك المفضل...',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              color: Color(0xFF9CA3AF),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
+                  onTap: c.openSearch,
+                  borderRadius: BorderRadius.circular(22),
+                  child: IgnorePointer(
+                    child: TextField(
+                      textAlign: TextAlign.right,
+                      decoration: InputDecoration(
+                        hintText: 'ابحث عن صنف بالاسم...',
+                        hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: const BorderSide(
+                            color: HomeUi.kPrimary,
+                            width: 1.2,
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -155,16 +176,24 @@ class HomeHeaderSection extends StatelessWidget {
     );
   }
 
-  void _showBranchSheet(BuildContext context) {
+  void _showBranchSheet(
+    BuildContext context, {
+    required Color sheetBg,
+    required Color textColor,
+    required Color mutedColor,
+    required Color dividerColor,
+    required Color tileBg,
+    required Color selectedTileBg,
+  }) {
     final branch = Get.find<BranchController>();
     Get.bottomSheet(
       Directionality(
         textDirection: TextDirection.rtl,
         child: Container(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: sheetBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Obx(() {
             final list = branch.branches;
@@ -178,26 +207,26 @@ class HomeHeaderSection extends StatelessWidget {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE5E7EB),
+                      color: dividerColor,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
-                const Text(
+                Text(
                   'اختيار الفرع',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF111827),
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'عند تغيير الفرع سيتم تحديث الصفحة الرئيسية، ولكل فرع سلة ومفضلة خاصة به.',
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: 12.5,
-                    color: Color(0xFF6B7280),
+                    color: mutedColor,
                     height: 1.4,
                   ),
                 ),
@@ -208,9 +237,14 @@ class HomeHeaderSection extends StatelessWidget {
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else if (list.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Center(child: Text('لا توجد فروع متاحة حالياً')),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        'لا توجد فروع متاحة حالياً',
+                        style: TextStyle(color: textColor),
+                      ),
+                    ),
                   )
                 else
                   ...list.map((b) {
@@ -225,28 +259,21 @@ class HomeHeaderSection extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: selected
-                              ? const Color(0xFFFFF3EC)
-                              : const Color(0xFFF8FAFC),
+                          color: selected ? selectedTileBg : tileBg,
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: selected
-                                ? HomeUi.kPrimary
-                                : const Color(0xFFE5E7EB),
+                            color: selected ? HomeUi.kPrimary : dividerColor,
                             width: selected ? 1.4 : 1,
                           ),
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              selected
-                                  ? Icons.check_circle
-                                  : Icons.storefront_outlined,
-                              color: selected
-                                  ? HomeUi.kPrimary
-                                  : const Color(0xFF6B7280),
-                            ),
-                            const SizedBox(width: 12),
+                            if (selected)
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: HomeUi.kPrimary,
+                              ),
+                            if (selected) const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -254,10 +281,10 @@ class HomeHeaderSection extends StatelessWidget {
                                   Text(
                                     b.name,
                                     textAlign: TextAlign.right,
-                                    style: const TextStyle(
+                                    style: TextStyle(
+                                      color: textColor,
                                       fontWeight: FontWeight.w800,
-                                      fontSize: 15,
-                                      color: Color(0xFF111827),
+                                      fontSize: 15.5,
                                     ),
                                   ),
                                   if (b.addressText.trim().isNotEmpty) ...[
@@ -265,9 +292,9 @@ class HomeHeaderSection extends StatelessWidget {
                                     Text(
                                       b.addressText,
                                       textAlign: TextAlign.right,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12.5,
-                                        color: Color(0xFF6B7280),
+                                        color: mutedColor,
                                       ),
                                     ),
                                   ],
@@ -306,18 +333,19 @@ class _TopSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(.16),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withOpacity(.18)),
+          color: Colors.white.withOpacity(.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(.20)),
         ),
         child: Row(
+          textDirection: TextDirection.rtl,
           children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
+            Icon(icon, color: Colors.white, size: 21),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -326,22 +354,23 @@ class _TopSelector extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
                     style: const TextStyle(
                       color: Color(0xFFFFE7D6),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     value,
-                    textAlign: TextAlign.right,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14.5,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],

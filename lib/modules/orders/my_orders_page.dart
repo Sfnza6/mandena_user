@@ -19,6 +19,16 @@ class MyOrdersPage extends StatelessWidget {
         ? Get.find<MyOrdersController>()
         : Get.put(MyOrdersController());
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = theme.scaffoldBackgroundColor;
+    final card = theme.cardColor;
+    final textMain = theme.textTheme.bodyLarge?.color ?? kTextMain;
+    final textSub =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? kTextSub;
+    final softOrange = isDark ? const Color(0xFF1F2937) : kSoftOrange;
+    final countBg = isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6);
+
     Widget tabItem(String label, bool active, int count, VoidCallback onTap) {
       return Expanded(
         child: GestureDetector(
@@ -30,7 +40,7 @@ class MyOrdersPage extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: active ? kSoftOrange : Colors.transparent,
+              color: active ? softOrange : Colors.transparent,
               borderRadius: BorderRadius.circular(18),
             ),
             child: Row(
@@ -41,7 +51,7 @@ class MyOrdersPage extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                    color: active ? kPrimary : kTextSub,
+                    color: active ? kPrimary : textSub,
                     fontSize: 13,
                   ),
                 ),
@@ -53,15 +63,13 @@ class MyOrdersPage extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: active
-                          ? const Color(0xFFFFE0CC)
-                          : const Color(0xFFF3F4F6),
+                      color: active ? softOrange.withOpacity(.75) : countBg,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '$count',
                       style: TextStyle(
-                        color: active ? kPrimary : kTextSub,
+                        color: active ? kPrimary : textSub,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
@@ -83,8 +91,8 @@ class MyOrdersPage extends StatelessWidget {
             child: Container(
               width: 86,
               height: 86,
-              decoration: const BoxDecoration(
-                color: kSoftOrange,
+              decoration: BoxDecoration(
+                color: softOrange,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -96,10 +104,7 @@ class MyOrdersPage extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Center(
-            child: Text(
-              text,
-              style: const TextStyle(color: kTextSub, fontSize: 14),
-            ),
+            child: Text(text, style: TextStyle(color: textSub, fontSize: 14)),
           ),
         ],
       );
@@ -111,7 +116,7 @@ class MyOrdersPage extends StatelessWidget {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: kCard,
+          color: card,
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
@@ -131,8 +136,8 @@ class MyOrdersPage extends StatelessWidget {
                 children: [
                   Text(
                     '#${o.id}',
-                    style: const TextStyle(
-                      color: kTextSub,
+                    style: TextStyle(
+                      color: textSub,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -143,7 +148,7 @@ class MyOrdersPage extends StatelessWidget {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: kSoftOrange,
+                      color: softOrange,
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(color: const Color(0xFFFFD6BF)),
                     ),
@@ -173,14 +178,14 @@ class MyOrdersPage extends StatelessWidget {
                   const Spacer(),
                   Text(
                     '${o.itemsCount.toString().padLeft(2, '0')} أصناف',
-                    style: const TextStyle(color: kTextSub, fontSize: 12.5),
+                    style: TextStyle(color: textSub, fontSize: 12.5),
                   ),
                   const SizedBox(width: 6),
-                  const Text('•', style: TextStyle(color: kTextSub)),
+                  Text('•', style: TextStyle(color: textSub)),
                   const SizedBox(width: 6),
                   Text(
                     c.formatDate(o.createdAt),
-                    style: const TextStyle(color: kTextSub, fontSize: 12.5),
+                    style: TextStyle(color: textSub, fontSize: 12.5),
                   ),
                 ],
               ),
@@ -265,9 +270,9 @@ class MyOrdersPage extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: kBg,
+        backgroundColor: bg,
         appBar: AppBar(
-          backgroundColor: kBg,
+          backgroundColor: bg,
           elevation: 0,
           centerTitle: true,
           title: const Text(
@@ -291,7 +296,7 @@ class MyOrdersPage extends StatelessWidget {
                 margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(
-                  color: kCard,
+                  color: card,
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(

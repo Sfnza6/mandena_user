@@ -1,6 +1,6 @@
 class Env {
   // لا تضع سلاش في النهاية
-  static const String baseUrl = "http://192.168.127.1/mandena/";
+  static const String baseUrl = "https://evoranta.ly/mandena/";
   static const String branchesList = "get_branches.php";
 
   static const String ordersList = "$baseUrl/get_orders.php";

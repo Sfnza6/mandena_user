@@ -110,11 +110,13 @@ class ItemDetailController extends GetxController {
   final selectedStars = 5.obs;
   final ratingBusy = false.obs;
   final avgRating = 0.0.obs;
+  final ratingsCount = 0.obs;
   final ratingMsg = ''.obs;
 
   final comments = <ItemComment>[].obs;
   final loadingComments = false.obs;
   final commentBusy = false.obs;
+  final commentTextCtrl = TextEditingController();
 
   /// 🆕 هل آخر محاولة addToCart نجحت فعلاً؟
   final lastAddSuccess = false.obs;
@@ -138,11 +140,19 @@ class ItemDetailController extends GetxController {
     _lastSnackAt = now;
 
     Get.rawSnackbar(
-      borderRadius: 14,
+      snackPosition: SnackPosition.TOP,
+      borderRadius: 16,
       snackStyle: SnackStyle.FLOATING,
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       backgroundColor: bg,
+      boxShadows: const [
+        BoxShadow(
+          color: Color(0x22000000),
+          blurRadius: 16,
+          offset: Offset(0, 8),
+        ),
+      ],
       messageText: Directionality(
         textDirection: TextDirection.rtl,
         child: Column(
@@ -595,7 +605,9 @@ class ItemDetailController extends GetxController {
 
         isFavorite.value = false;
         if (Get.isRegistered<FavoritesController>()) {
-          Get.find<FavoritesController>().markFavoriteRemoved(item.id);
+          final favCtrl = Get.find<FavoritesController>();
+          await favCtrl.bindToCurrentUser();
+          favCtrl.markFavoriteRemoved(item.id);
         }
         _showInfo('تمت إزالة المنتج من المفضلة', title: 'المفضلة');
       } else {
@@ -614,10 +626,9 @@ class ItemDetailController extends GetxController {
 
         isFavorite.value = true;
         if (Get.isRegistered<FavoritesController>()) {
-          Get.find<FavoritesController>().markFavoriteAdded(
-            item.id,
-            itemData: item.toJson(),
-          );
+          final favCtrl = Get.find<FavoritesController>();
+          await favCtrl.bindToCurrentUser();
+          favCtrl.markFavoriteAdded(item.id, itemData: item.toJson());
         }
         _showSuccess('تمت إضافة المنتج إلى المفضلة بنجاح', title: 'تم');
       }
@@ -663,7 +674,20 @@ class ItemDetailController extends GetxController {
 
   double get total => unitTotal * qty.value;
 
+  /// Returns true if the item is closed/unavailable for ordering.
+  bool get isItemClosed => !item.isActive || item.outOfStock;
+
   Future<void> addToCart() async {
+    if (isItemClosed) {
+      lastAddSuccess.value = false;
+      _showSnack(
+        bg: const Color(0xFF374151),
+        title: 'الصنف غير متاح',
+        msg: 'هذا الصنف غير متاح حالياً ولا يمكن إضافته إلى السلة.',
+      );
+      return;
+    }
+
     // 🧱 منع الإضافة في وضع الحساب التجريبي (مع رسالة واضحة)
     lastAddSuccess.value = false;
 
@@ -710,7 +734,10 @@ class ItemDetailController extends GetxController {
         final cart = Get.isRegistered<CartController>()
             ? Get.find<CartController>()
             : null;
-        await cart?.load();
+        if (cart != null) {
+          await cart.bindToCurrentUser();
+          await cart.load();
+        }
 
         if (!_isDemoUser(_userId, _isDemo)) {
           _showSnack(
@@ -759,19 +786,27 @@ class ItemDetailController extends GetxController {
       }
 
       if (m != null) {
-        // 🆕 نقرأ rating أو avg_rating، ونحدّث فقط لو القيمة > 0
-        final r =
-            double.tryParse('${m['rating'] ?? m['avg_rating'] ?? 0}') ?? 0.0;
+        // نحدّث المتوسط فقط لو السيرفر رجّع قيمة فعلية > 0
+        final rawRating = m['rating'] ?? m['avg_rating'];
+        final r = rawRating == null ? null : double.tryParse('$rawRating');
 
-        if (r > 0) {
+        // لا نصفر عدد المقيمين إذا المفتاح غير موجود أصلاً
+        final hasCountKey =
+            m.containsKey('ratings_count') || m.containsKey('rating_count');
+        final rawCount = m['ratings_count'] ?? m['rating_count'];
+        final c = rawCount == null ? null : int.tryParse('$rawCount');
+
+        if (r != null && r > 0) {
           avgRating.value = r;
         }
-        // لو السيرفر رجّع 0 أو فاضي → نخلي القيمة القديمة كما هي
+        if (hasCountKey && c != null && c >= 0) {
+          ratingsCount.value = c;
+        }
       }
     } catch (_) {}
   }
 
-  Future<void> submitRating(String? comment) async {
+  Future<void> submitRating() async {
     if (await _checkDemoBlock("إرسال التقييم")) return;
 
     if (ratingBusy.value) return;
@@ -786,18 +821,18 @@ class ItemDetailController extends GetxController {
           'user_id': '$_userId',
           'item_id': '${item.id}',
           'stars': '${selectedStars.value}',
-          if (comment != null && comment.trim().isNotEmpty)
-            'comment': comment.trim(),
         },
       );
 
       if (res is Map && (res['ok'] == true || '${res['ok']}' == '1')) {
         final newAvg = double.tryParse('${res['avg_rating'] ?? ''}');
+        final newCount = int.tryParse('${res['ratings_count'] ?? 0}') ?? 0;
         if (newAvg != null && newAvg > 0) {
           avgRating.value = newAvg;
         } else {
           await _refreshAvgFromServer();
         }
+        ratingsCount.value = newCount;
         ratingMsg.value = 'تم حفظ تقييمك بنجاح';
         _showSuccess('شكراً لمشاركتك رأيك!');
       } else {
@@ -806,7 +841,7 @@ class ItemDetailController extends GetxController {
       }
     } catch (e) {
       ratingMsg.value = _friendlyMessage(e);
-      _showUserError(ratingMsg.value, onRetry: () => submitRating(comment));
+      _showUserError(ratingMsg.value, onRetry: submitRating);
     } finally {
       ratingBusy.value = false;
     }
@@ -823,8 +858,21 @@ class ItemDetailController extends GetxController {
       List list = const [];
       if (res is List) {
         list = res;
-      } else if (res is Map && res['comments'] is List) {
-        list = res['comments'];
+      } else if (res is Map) {
+        if (res['comments'] is List) list = res['comments'];
+
+        final rawAvg = res['avg_rating'];
+        final parsedAvg = rawAvg == null ? null : double.tryParse('$rawAvg');
+        if (parsedAvg != null && parsedAvg > 0) {
+          avgRating.value = parsedAvg;
+        }
+
+        if (res.containsKey('ratings_count')) {
+          final parsedCount = int.tryParse('${res['ratings_count']}');
+          if (parsedCount != null && parsedCount >= 0) {
+            ratingsCount.value = parsedCount;
+          }
+        }
       }
 
       final parsed = list
@@ -841,10 +889,10 @@ class ItemDetailController extends GetxController {
     }
   }
 
-  Future<void> submitComment(String text) async {
+  Future<void> submitComment([String? text]) async {
     if (await _checkDemoBlock("إضافة تعليق")) return;
 
-    final content = text.trim();
+    final content = (text ?? commentTextCtrl.text).trim();
     if (content.isEmpty) {
       _showInfo('اكتب تعليقاً أولاً');
       return;
@@ -867,6 +915,7 @@ class ItemDetailController extends GetxController {
           (res['ok'] == true ||
               '${res['ok']}'.toLowerCase() == '1' ||
               '${res['status']}'.toString().toLowerCase() == 'success')) {
+        commentTextCtrl.clear();
         _showSuccess('تم إضافة تعليقك بنجاح');
         await fetchComments();
       } else {
@@ -885,5 +934,11 @@ class ItemDetailController extends GetxController {
     } finally {
       commentBusy.value = false;
     }
+  }
+
+  @override
+  void onClose() {
+    commentTextCtrl.dispose();
+    super.onClose();
   }
 }

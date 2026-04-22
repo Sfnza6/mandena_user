@@ -148,7 +148,7 @@ class _RegisterViewState extends State<RegisterView> {
                           ),
                           alignment: Alignment.center,
                           child: Image.asset(
-                            'assets/images/logo.png',
+                            'assets/images/Logo.png',
                             width: 50,
                             height: 50,
                             color: Colors.white,

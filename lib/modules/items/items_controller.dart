@@ -7,6 +7,7 @@ import '../../core/api_service.dart';
 import '../../data/models/item.dart';
 import '../../data/repositories/items_repository.dart';
 import '../../app_routes.dart';
+import '../../home/widgets/hero_tags.dart';
 
 class ItemsController extends GetxController {
   final ItemsRepository _repo = ItemsRepository(ApiService());
@@ -38,7 +39,10 @@ class ItemsController extends GetxController {
     int seconds = 4,
   }) {
     final now = DateTime.now();
-    if (_lastSnackAt != null && now.difference(_lastSnackAt!) < _snackThrottle) return;
+    if (_lastSnackAt != null &&
+        now.difference(_lastSnackAt!) < _snackThrottle) {
+      return;
+    }
     _lastSnackAt = now;
 
     Get.rawSnackbar(
@@ -52,11 +56,23 @@ class ItemsController extends GetxController {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text(msg,
-                style: const TextStyle(color: Color(0xFFE5E7EB), fontSize: 13.5, height: 1.3)),
+            Text(
+              msg,
+              style: const TextStyle(
+                color: Color(0xFFE5E7EB),
+                fontSize: 13.5,
+                height: 1.3,
+              ),
+            ),
           ],
         ),
       ),
@@ -67,14 +83,21 @@ class ItemsController extends GetxController {
         },
         child: Text(
           actionLabel ?? 'إغلاق',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       duration: Duration(seconds: seconds),
     );
   }
 
-  void _showUserError(String msg, {String title = 'تعذّر تحميل الأصناف', VoidCallback? onRetry}) {
+  void _showUserError(
+    String msg, {
+    String title = 'تعذّر تحميل الأصناف',
+    VoidCallback? onRetry,
+  }) {
     _showSnack(
       bg: const Color(0xFF1F2937),
       title: title,
@@ -98,13 +121,19 @@ class ItemsController extends GetxController {
         t.contains('لا يوجد اتصال')) {
       return '⚠️ لا يوجد اتصال بالإنترنت.\nتحقّق من الشبكة ثم أعد المحاولة.';
     }
-    if (t.contains('timeout') || t.contains('timed out') || t.contains('deadline exceeded')) {
+    if (t.contains('timeout') ||
+        t.contains('timed out') ||
+        t.contains('deadline exceeded')) {
       return '⏳ انتهت مهلة الاتصال.\nجرّب مرة ثانية بعد لحظات.';
     }
-    if (t.contains('handshakeexception') || t.contains('certificate') || t.contains('ssl')) {
+    if (t.contains('handshakeexception') ||
+        t.contains('certificate') ||
+        t.contains('ssl')) {
       return '🔐 مشكلة أمان مؤقتة أثناء الاتصال بالخادم.\nيرجى المحاولة لاحقاً.';
     }
-    if (t.contains('formatexception') || t.contains('unexpected character') || t.contains('json')) {
+    if (t.contains('formatexception') ||
+        t.contains('unexpected character') ||
+        t.contains('json')) {
       return '⚠️ حدث خلل في البيانات المستلمة.\nسنحاول إصلاحه، جرّب لاحقاً.';
     }
     return 'حدث خطأ غير متوقع.\nيرجى المحاولة لاحقاً.';
@@ -170,9 +199,11 @@ class ItemsController extends GetxController {
     Iterable<ItemModel> base = items;
     if (cat != null) base = base.where((e) => e.categoryId == cat);
     if (q.isNotEmpty) {
-      base = base.where((e) =>
-          e.name.toLowerCase().contains(q.toLowerCase()) ||
-          e.description.toLowerCase().contains(q.toLowerCase()));
+      base = base.where(
+        (e) =>
+            e.name.toLowerCase().contains(q.toLowerCase()) ||
+            e.description.toLowerCase().contains(q.toLowerCase()),
+      );
     }
     filtered.assignAll(base);
   }
@@ -193,15 +224,21 @@ class ItemsController extends GetxController {
     } catch (e) {
       items.clear();
       filtered.clear();
-      _showUserError(_friendlyMessage(e), onRetry: () => fetchItems(categoryId: categoryId));
+      _showUserError(
+        _friendlyMessage(e),
+        onRetry: () => fetchItems(categoryId: categoryId),
+      );
     } finally {
       loading(false);
     }
   }
 
   /// ——— فتح تفاصيل الصنف من شاشة الأصناف ———
-  void openDetail(ItemModel item) {
-    // نمرّر كـ Map لتفادي مشاكل isolate
-    Get.toNamed(AppRoutes.itemDetail, arguments: item.toJson());
+  void openDetail(ItemModel item, {String? heroTag}) {
+    final tag = heroTag ?? itemHeroTagFromModel(item, scope: 'items-grid');
+    Get.toNamed(
+      AppRoutes.itemDetail,
+      arguments: withItemHeroArg(item.toJson(), tag),
+    );
   }
 }

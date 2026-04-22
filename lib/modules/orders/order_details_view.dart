@@ -7,11 +7,10 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
 
   static const Color kPrimary = Color(0xFFFF5A00);
   static const Color kPrimaryDark = Color(0xFFFF2E00);
-  static const Color kBg = Color(0xFFF5F5F7);
-  static const Color kCard = Colors.white;
   static const Color kText = Color(0xFF111827);
   static const Color kMuted = Color(0xFF8B95A7);
   static const Color kSoftOrange = Color(0xFFFFF1E9);
+  static const Color kBorder = Color(0xFFFFE6D7);
 
   @override
   Widget build(BuildContext context) {
@@ -19,12 +18,22 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
       Get.put(OrderDetailsController());
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final pageBg = theme.scaffoldBackgroundColor;
+    final cardColor = theme.cardColor;
+    final textColor = theme.textTheme.bodyLarge?.color ?? kText;
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? kMuted;
+    final softFill = isDark ? const Color(0xFF1F2937) : kSoftOrange;
+    final borderColor = isDark ? Colors.white10 : kBorder;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: kBg,
+        backgroundColor: pageBg,
         appBar: AppBar(
-          backgroundColor: kBg,
+          backgroundColor: pageBg,
           elevation: 0,
           centerTitle: true,
           leading: IconButton(
@@ -57,8 +66,8 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
                   Container(
                     width: 84,
                     height: 84,
-                    decoration: const BoxDecoration(
-                      color: kSoftOrange,
+                    decoration: BoxDecoration(
+                      color: softFill,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -68,9 +77,9 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
+                  Text(
                     'لا توجد بيانات لهذا الطلب',
-                    style: TextStyle(color: kMuted, fontSize: 14),
+                    style: TextStyle(color: mutedColor, fontSize: 14),
                   ),
                   const SizedBox(height: 10),
                   TextButton(
@@ -95,34 +104,51 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
               children: [
                 _HeaderCard(
                   orderId: h.id,
-                  status: h.status,
+                  status: controller.statusArabic(h.status),
                   deliveryType: controller.deliveryTypeArabic(h.statusOrder),
                   address: h.address,
                   createdAt: h.createdAt,
                 ),
                 const SizedBox(height: 14),
-                _PaymentCard(h: h),
+                _PaymentCard(
+                  h: h,
+                  cardColor: cardColor,
+                  textColor: textColor,
+                  mutedColor: mutedColor,
+                  softFill: softFill,
+                  isDark: isDark,
+                ),
                 const SizedBox(height: 18),
-                const Text(
+                Text(
                   'الأصناف',
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
-                    color: kText,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 10),
-                ...controller.items.map((it) => _OrderItemCard(item: it)),
+                ...controller.items.map(
+                  (it) => _OrderItemCard(
+                    item: it,
+                    cardColor: cardColor,
+                    textColor: textColor,
+                    mutedColor: mutedColor,
+                    softFill: softFill,
+                    borderColor: borderColor,
+                    isDark: isDark,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: kCard,
+                    color: cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(.04),
+                        color: Colors.black.withOpacity(isDark ? .18 : .04),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -134,6 +160,8 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
                         title: 'رسوم التوصيل',
                         value: h.deliveryFee.toStringAsFixed(2),
                         muted: true,
+                        textColor: textColor,
+                        mutedColor: mutedColor,
                       ),
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
@@ -143,13 +171,22 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
                         title: 'الإجمالي النهائي',
                         value: controller.computedGrandTotal.toStringAsFixed(2),
                         isTotal: true,
+                        textColor: textColor,
+                        mutedColor: mutedColor,
                       ),
                     ],
                   ),
                 ),
                 if (d != null) ...[
                   const SizedBox(height: 16),
-                  _DriverCard(driver: d),
+                  _DriverCard(
+                    driver: d,
+                    cardColor: cardColor,
+                    textColor: textColor,
+                    mutedColor: mutedColor,
+                    softFill: softFill,
+                    isDark: isDark,
+                  ),
                 ],
               ],
             ),
@@ -177,11 +214,28 @@ class _HeaderCard extends StatelessWidget {
 
   Color _statusColor(String s) {
     final v = s.toLowerCase().trim();
-    if (v.contains('pending')) return const Color(0xFFFF9800);
-    if (v.contains('processing')) return const Color(0xFF2196F3);
-    if (v.contains('delivered')) return const Color(0xFF2E7D32);
-    if (v.contains('rejected') || v.contains('cancel'))
+
+    if (v.contains('pending') || v.contains('قيد الانتظار')) {
+      return const Color(0xFFFF9800);
+    }
+    if (v.contains('processing') || v.contains('قيد المعالجة')) {
+      return const Color(0xFF2196F3);
+    }
+    if (v.contains('accepted') || v.contains('تم القبول')) {
+      return const Color(0xFF00897B);
+    }
+    if (v.contains('assigned') || v.contains('تم إسناده')) {
+      return const Color(0xFF7B61FF);
+    }
+    if (v.contains('delivered') || v.contains('تم التسليم')) {
+      return const Color(0xFF2E7D32);
+    }
+    if (v.contains('rejected') ||
+        v.contains('cancel') ||
+        v.contains('مرفوض') ||
+        v.contains('ملغي')) {
       return const Color(0xFFD32F2F);
+    }
     return OrderDetailsView.kPrimary;
   }
 
@@ -286,9 +340,21 @@ class _HeaderCard extends StatelessWidget {
 }
 
 class _PaymentCard extends StatelessWidget {
-  const _PaymentCard({required this.h});
+  const _PaymentCard({
+    required this.h,
+    required this.cardColor,
+    required this.textColor,
+    required this.mutedColor,
+    required this.softFill,
+    required this.isDark,
+  });
 
   final OrderHeaderModel h;
+  final Color cardColor;
+  final Color textColor;
+  final Color mutedColor;
+  final Color softFill;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -324,11 +390,11 @@ class _PaymentCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: OrderDetailsView.kCard,
+        color: cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.04),
+            color: Colors.black.withOpacity(isDark ? .18 : .04),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -337,25 +403,37 @@ class _PaymentCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const Text(
+          Text(
             'معلومات الدفع',
             style: TextStyle(
               fontWeight: FontWeight.w900,
               fontSize: 17,
-              color: OrderDetailsView.kText,
+              color: textColor,
             ),
           ),
           const SizedBox(height: 12),
-          _InfoRow(title: 'طريقة الدفع', value: methodLabel),
+          _InfoRow(
+            title: 'طريقة الدفع',
+            value: methodLabel,
+            mutedColor: mutedColor,
+            textColor: textColor,
+          ),
           if (isOnline) ...[
             const SizedBox(height: 8),
-            _InfoRow(title: 'المصرف', value: bankLabel),
+            _InfoRow(
+              title: 'المصرف',
+              value: bankLabel,
+              mutedColor: mutedColor,
+              textColor: textColor,
+            ),
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
+                color: isDark
+                    ? const Color(0xFF16311D)
+                    : const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Text(
@@ -377,9 +455,23 @@ class _PaymentCard extends StatelessWidget {
 }
 
 class _OrderItemCard extends StatelessWidget {
-  const _OrderItemCard({required this.item});
+  const _OrderItemCard({
+    required this.item,
+    required this.cardColor,
+    required this.textColor,
+    required this.mutedColor,
+    required this.softFill,
+    required this.borderColor,
+    required this.isDark,
+  });
 
   final OrderItemModel item;
+  final Color cardColor;
+  final Color textColor;
+  final Color mutedColor;
+  final Color softFill;
+  final Color borderColor;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -391,14 +483,14 @@ class _OrderItemCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: OrderDetailsView.kCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFE6D7)),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.03),
+            color: Colors.black.withOpacity(isDark ? .18 : .03),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -409,28 +501,31 @@ class _OrderItemCard extends StatelessWidget {
         children: [
           Row(
             textDirection: TextDirection.rtl,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      item.name,
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15.5,
-                        color: OrderDetailsView.kText,
+                    SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        item.name,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15.5,
+                          color: textColor,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      'الكمية: ${item.quantity} × ${item.price.toStringAsFixed(2)} د.ل',
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        color: OrderDetailsView.kMuted,
-                        fontSize: 12.5,
+                    SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        'الكمية: ${item.quantity} × ${item.price.toStringAsFixed(2)} د.ل',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: mutedColor, fontSize: 12.5),
                       ),
                     ),
                   ],
@@ -438,16 +533,18 @@ class _OrderItemCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Container(
+                constraints: const BoxConstraints(minWidth: 78),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: OrderDetailsView.kSoftOrange,
+                  color: softFill,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
                   '$total د.ل',
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: OrderDetailsView.kPrimary,
                     fontWeight: FontWeight.w900,
@@ -458,7 +555,7 @@ class _OrderItemCard extends StatelessWidget {
             ],
           ),
           if (item.extras.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const _MiniSectionTitle('الإضافات'),
             const SizedBox(height: 6),
             ...item.extras.map(
@@ -466,11 +563,13 @@ class _OrderItemCard extends StatelessWidget {
                 text:
                     '${ex.name} (${ex.quantity} × ${ex.price.toStringAsFixed(2)} د.ل)',
                 trailing: '${ex.lineTotal.toStringAsFixed(2)} د.ل',
+                textColor: textColor,
+                mutedColor: mutedColor,
               ),
             ),
           ],
           if (item.componentsAdd.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const _MiniSectionTitle('المكوّنات المُضافة'),
             const SizedBox(height: 6),
             ...item.componentsAdd.map(
@@ -478,18 +577,24 @@ class _OrderItemCard extends StatelessWidget {
                 text:
                     '${c.name} (${c.quantity} × ${c.price.toStringAsFixed(2)} د.ل)',
                 trailing: '${(c.price * c.quantity).toStringAsFixed(2)} د.ل',
+                textColor: textColor,
+                mutedColor: mutedColor,
               ),
             ),
           ],
           if (item.componentsRem.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const _MiniSectionTitle('المكوّنات المحذوفة'),
             const SizedBox(height: 6),
             ...item.componentsRem.map((c) {
               final label = (c.name.trim().isNotEmpty)
                   ? c.name
                   : (c.id > 0 ? '#${c.id}' : '— محذوف —');
-              return _BulletLine(text: label);
+              return _BulletLine(
+                text: label,
+                textColor: textColor,
+                mutedColor: mutedColor,
+              );
             }),
           ],
         ],
@@ -499,20 +604,32 @@ class _OrderItemCard extends StatelessWidget {
 }
 
 class _DriverCard extends StatelessWidget {
-  const _DriverCard({required this.driver});
+  const _DriverCard({
+    required this.driver,
+    required this.cardColor,
+    required this.textColor,
+    required this.mutedColor,
+    required this.softFill,
+    required this.isDark,
+  });
 
   final Map driver;
+  final Color cardColor;
+  final Color textColor;
+  final Color mutedColor;
+  final Color softFill;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: OrderDetailsView.kCard,
+        color: cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.04),
+            color: Colors.black.withOpacity(isDark ? .18 : .04),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -524,10 +641,7 @@ class _DriverCard extends StatelessWidget {
           Container(
             width: 48,
             height: 48,
-            decoration: const BoxDecoration(
-              color: OrderDetailsView.kSoftOrange,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: softFill, shape: BoxShape.circle),
             child: const Icon(
               Icons.person_outline_rounded,
               color: OrderDetailsView.kPrimary,
@@ -538,20 +652,17 @@ class _DriverCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text(
+                Text(
                   'السائق',
-                  style: TextStyle(
-                    color: OrderDetailsView.kMuted,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: mutedColor, fontSize: 12),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   (driver['name'] ?? '-').toString(),
                   textAlign: TextAlign.right,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
-                    color: OrderDetailsView.kText,
+                    color: textColor,
                     fontSize: 15,
                   ),
                 ),
@@ -583,7 +694,7 @@ class _InfoLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       textDirection: TextDirection.rtl,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Icon(
           icon,
@@ -596,7 +707,10 @@ class _InfoLine extends StatelessWidget {
             text,
             textAlign: TextAlign.right,
             style: TextStyle(
-              color: white ? Colors.white : OrderDetailsView.kText,
+              color: white
+                  ? Colors.white
+                  : (Theme.of(context).textTheme.bodyLarge?.color ??
+                        OrderDetailsView.kText),
               fontSize: 13.5,
               height: 1.5,
             ),
@@ -608,22 +722,29 @@ class _InfoLine extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.title, required this.value});
+  const _InfoRow({
+    required this.title,
+    required this.value,
+    required this.mutedColor,
+    required this.textColor,
+  });
 
   final String title;
   final String value;
+  final Color mutedColor;
+  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       textDirection: TextDirection.rtl,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
           '$title: ',
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w700,
-            color: OrderDetailsView.kText,
+            color: textColor,
             fontSize: 13.5,
           ),
         ),
@@ -631,10 +752,7 @@ class _InfoRow extends StatelessWidget {
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: OrderDetailsView.kMuted,
-              fontSize: 13.5,
-            ),
+            style: TextStyle(color: mutedColor, fontSize: 13.5),
           ),
         ),
       ],
@@ -649,40 +767,50 @@ class _MiniSectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      textAlign: TextAlign.right,
-      style: const TextStyle(
-        color: OrderDetailsView.kPrimary,
-        fontWeight: FontWeight.w800,
-        fontSize: 13.5,
+    return SizedBox(
+      width: double.infinity,
+      child: Text(
+        title,
+        textAlign: TextAlign.right,
+        style: const TextStyle(
+          color: OrderDetailsView.kPrimary,
+          fontWeight: FontWeight.w800,
+          fontSize: 13.5,
+        ),
       ),
     );
   }
 }
 
 class _BulletLine extends StatelessWidget {
-  const _BulletLine({required this.text, this.trailing});
+  const _BulletLine({
+    required this.text,
+    required this.textColor,
+    required this.mutedColor,
+    this.trailing,
+  });
 
   final String text;
   final String? trailing;
+  final Color textColor;
+  final Color mutedColor;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 6),
       child: Row(
         textDirection: TextDirection.rtl,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: Text(
-              '• $text',
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: OrderDetailsView.kText,
-                fontSize: 13,
-                height: 1.5,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '• $text',
+                textAlign: TextAlign.right,
+                style: TextStyle(color: textColor, fontSize: 13, height: 1.55),
               ),
             ),
           ),
@@ -690,8 +818,9 @@ class _BulletLine extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               trailing!,
-              style: const TextStyle(
-                color: OrderDetailsView.kMuted,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: mutedColor,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
               ),
@@ -707,12 +836,16 @@ class _PriceRow extends StatelessWidget {
   const _PriceRow({
     required this.title,
     required this.value,
+    required this.textColor,
+    required this.mutedColor,
     this.muted = false,
     this.isTotal = false,
   });
 
   final String title;
   final String value;
+  final Color textColor;
+  final Color mutedColor;
   final bool muted;
   final bool isTotal;
 
@@ -724,9 +857,7 @@ class _PriceRow extends StatelessWidget {
         Text(
           title,
           style: TextStyle(
-            color: isTotal
-                ? OrderDetailsView.kText
-                : (muted ? OrderDetailsView.kMuted : OrderDetailsView.kText),
+            color: isTotal ? textColor : (muted ? mutedColor : textColor),
             fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
             fontSize: isTotal ? 16 : 14,
           ),
@@ -735,7 +866,7 @@ class _PriceRow extends StatelessWidget {
         Text(
           '$value د.ل',
           style: TextStyle(
-            color: isTotal ? OrderDetailsView.kPrimary : OrderDetailsView.kText,
+            color: isTotal ? OrderDetailsView.kPrimary : textColor,
             fontWeight: FontWeight.w900,
             fontSize: isTotal ? 16 : 14,
           ),

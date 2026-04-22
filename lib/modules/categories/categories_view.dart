@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mandena/home/widgets/hero_tags.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app_routes.dart';
@@ -11,7 +12,9 @@ import '../../data/models/item.dart';
 
 const _kPrimary = Color(0xFFFF5A00);
 const _kPrimaryDark = Color(0xFFFF2E00);
+// ignore: unused_element
 const _kPageBg = Color(0xFFF5F5F7);
+// ignore: unused_element
 const _kCard = Colors.white;
 const _kText = Color(0xFF111827);
 const _kMuted = Color(0xFF8B95A7);
@@ -121,10 +124,21 @@ class _CategoriesViewState extends State<CategoriesView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = theme.scaffoldBackgroundColor;
+    final card = theme.cardColor;
+    final textColor = theme.textTheme.bodyLarge?.color ?? _kText;
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? _kMuted;
+    final softFill = isDark ? const Color(0xFF1F2937) : const Color(0xFFFFF1E9);
+    final fieldFill = isDark ? const Color(0xFF111827) : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFE5E7EB);
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: _kPageBg,
+        backgroundColor: bg,
         body: Column(
           children: [
             Container(
@@ -155,18 +169,18 @@ class _CategoriesViewState extends State<CategoriesView> {
                       //   onPressed: () => Get.back(),
                       //   icon: const Icon(
                       //     Icons.arrow_forward_ios_rounded,
-                      //     color: Colors.white,
+                      //     color: fieldFill,
                       //   ),
                       // ),
                     ],
                   ),
-                  const Align(
+                  Align(
                     alignment: Alignment.centerRight,
                     child: Text(
                       'الأقسام',
                       textAlign: TextAlign.right,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: fieldFill,
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
                       ),
@@ -177,22 +191,22 @@ class _CategoriesViewState extends State<CategoriesView> {
                     height: 54,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: fieldFill,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Row(
                       textDirection: TextDirection.rtl,
                       children: [
-                        const Icon(Icons.search_rounded, color: _kMuted),
+                        Icon(Icons.search_rounded, color: mutedColor),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
                             controller: _searchCtrl,
                             textAlign: TextAlign.right,
                             textDirection: TextDirection.rtl,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'ابحث في القائمة...',
-                              hintStyle: TextStyle(color: _kMuted),
+                              hintStyle: TextStyle(color: mutedColor),
                               border: InputBorder.none,
                             ),
                           ),
@@ -207,29 +221,6 @@ class _CategoriesViewState extends State<CategoriesView> {
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.16),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        textDirection: TextDirection.rtl,
-                        children: [
-                          Icon(
-                            Icons.tune_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'تصفية',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ),
@@ -247,16 +238,16 @@ class _CategoriesViewState extends State<CategoriesView> {
                       parent: AlwaysScrollableScrollPhysics(),
                     ),
                     slivers: [
-                      const SliverToBoxAdapter(
+                      SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(16, 18, 16, 10),
+                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: Text(
                               'جميع الأقسام',
                               textAlign: TextAlign.right,
                               style: TextStyle(
-                                color: _kText,
+                                color: textColor,
                                 fontWeight: FontWeight.w900,
                                 fontSize: 26,
                               ),
@@ -281,7 +272,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                               borderRadius: BorderRadius.circular(18),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: _kCard,
+                                  color: card,
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
                                     color: selected
@@ -306,8 +297,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Container(
-                                        width: 58,
-                                        height: 58,
+                                        width: 88,
+                                        height: 88,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFFFF3EC),
                                           borderRadius: BorderRadius.circular(
@@ -335,8 +326,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          color: _kText,
+                                        style: TextStyle(
+                                          color: textColor,
                                           fontWeight: FontWeight.w800,
                                           height: 1.25,
                                         ),
@@ -362,11 +353,11 @@ class _CategoriesViewState extends State<CategoriesView> {
                           child: Row(
                             textDirection: TextDirection.rtl,
                             children: [
-                              const Text(
+                              Text(
                                 'جميع الأصناف',
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
-                                  color: _kText,
+                                  color: textColor,
                                   fontWeight: FontWeight.w900,
                                   fontSize: 26,
                                 ),
@@ -375,8 +366,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                               Text(
                                 '${items.length} صنف',
                                 textAlign: TextAlign.right,
-                                style: const TextStyle(
-                                  color: _kMuted,
+                                style: TextStyle(
+                                  color: mutedColor,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -400,14 +391,24 @@ class _CategoriesViewState extends State<CategoriesView> {
                             delegate: SliverChildBuilderDelegate((_, i) {
                               final item = items[i];
                               return InkWell(
-                                onTap: () => Get.toNamed(
-                                  AppRoutes.itemDetail,
-                                  arguments: item.toJson(),
-                                ),
+                                onTap: () {
+                                  final heroTag = itemHeroTagFromModel(
+                                    item,
+                                    scope: 'categories-grid',
+                                    extra: i,
+                                  );
+                                  Get.toNamed(
+                                    AppRoutes.itemDetail,
+                                    arguments: withItemHeroArg(
+                                      item.toJson(),
+                                      heroTag,
+                                    ),
+                                  );
+                                },
                                 borderRadius: BorderRadius.circular(20),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: _kCard,
+                                    color: card,
                                     borderRadius: BorderRadius.circular(20),
                                     boxShadow: [
                                       BoxShadow(
@@ -429,22 +430,35 @@ class _CategoriesViewState extends State<CategoriesView> {
                                           child: Stack(
                                             children: [
                                               Positioned.fill(
-                                                child: Image.network(
-                                                  item.imageUrl,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) =>
-                                                      Container(
-                                                        color: const Color(
-                                                          0xFFF2EEE8,
+                                                child: Hero(
+                                                  tag: itemHeroTagFromModel(
+                                                    item,
+                                                    scope: 'categories-grid',
+                                                    extra: i,
+                                                  ),
+                                                  transitionOnUserGestures:
+                                                      true,
+                                                  child: Image.network(
+                                                    item.imageUrl,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder:
+                                                        (
+                                                          _,
+                                                          __,
+                                                          ___,
+                                                        ) => Container(
+                                                          color: const Color(
+                                                            0xFFF2EEE8,
+                                                          ),
+                                                          alignment:
+                                                              Alignment.center,
+                                                          child: const Icon(
+                                                            Icons
+                                                                .fastfood_rounded,
+                                                            color: _kPrimary,
+                                                          ),
                                                         ),
-                                                        alignment:
-                                                            Alignment.center,
-                                                        child: const Icon(
-                                                          Icons
-                                                              .fastfood_rounded,
-                                                          color: _kPrimary,
-                                                        ),
-                                                      ),
+                                                  ),
                                                 ),
                                               ),
                                               Positioned(
@@ -453,11 +467,10 @@ class _CategoriesViewState extends State<CategoriesView> {
                                                 child: Container(
                                                   width: 34,
                                                   height: 34,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        color: Colors.white,
-                                                        shape: BoxShape.circle,
-                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: fieldFill,
+                                                    shape: BoxShape.circle,
+                                                  ),
                                                   child: const Icon(
                                                     Icons.star_border_outlined,
                                                     color: _kPrimary,
@@ -485,8 +498,8 @@ class _CategoriesViewState extends State<CategoriesView> {
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                               textAlign: TextAlign.right,
-                                              style: const TextStyle(
-                                                color: _kText,
+                                              style: TextStyle(
+                                                color: textColor,
                                                 fontWeight: FontWeight.w800,
                                                 fontSize: 14,
                                                 height: 1.25,

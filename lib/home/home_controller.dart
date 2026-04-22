@@ -9,6 +9,7 @@ import '../data/models/item.dart';
 import '../data/repositories/home_repository.dart';
 import '../core/api_service.dart';
 import '../core/session.dart';
+import '../core/app_colors.dart';
 
 // 🔹 ربط مع كنترولر السلة
 import '../modules/cart/cart_controller.dart';
@@ -33,6 +34,54 @@ class HomeController extends GetxController {
   final categories = <CategoryModel>[].obs;
   final mostOrdered = <ItemModel>[].obs;
   final topRated = <ItemModel>[].obs;
+
+  // =================== البحث ===================
+  final searchCtrl = TextEditingController();
+  final searchQuery = ''.obs;
+  final searchResults = <ItemModel>[].obs;
+
+  bool get isSearching => searchQuery.value.trim().isNotEmpty;
+
+  void onSearchChanged(String value) {
+    searchQuery.value = value;
+    _applySearch();
+  }
+
+  void clearSearch() {
+    searchCtrl.clear();
+    searchQuery.value = '';
+    searchResults.clear();
+  }
+
+  void _applySearch() {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) {
+      searchResults.clear();
+      return;
+    }
+
+    final Map<int, ItemModel> merged = {};
+    for (final it in mostOrdered) {
+      merged[it.id] = it;
+    }
+    for (final it in topRated) {
+      merged[it.id] = it;
+    }
+
+    final result = merged.values.where((item) {
+      final name = item.name.toLowerCase();
+      return name.contains(q);
+    }).toList();
+
+    result.sort((a, b) {
+      final aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+      final bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      if (aStarts != bStarts) return aStarts.compareTo(bStarts);
+      return a.name.compareTo(b.name);
+    });
+
+    searchResults.assignAll(result);
+  }
 
   // =================== إضافات إدارة الأخطاء/الإنترنت ===================
 
@@ -326,6 +375,12 @@ class HomeController extends GetxController {
     });
   }
 
+  @override
+  void onClose() {
+    searchCtrl.dispose();
+    super.onClose();
+  }
+
   Future<void> _initStorage() async {
     try {
       await GetStorage.init();
@@ -387,6 +442,8 @@ class HomeController extends GetxController {
             .toList();
         topRated.assignAll(list);
       }
+
+      _applySearch();
     } catch (_) {
       // نتجاهل أي خطأ بالكاش بصمت
     }
@@ -402,6 +459,10 @@ class HomeController extends GetxController {
 
     // بعد تعديل العنوان، يحتاج تأكيد جديد للسلة
     _addressConfirmedForCart = false;
+  }
+
+  void openSearch() {
+    Get.toNamed('/search');
   }
 
   void setLocationName(String name, {bool persist = true}) {
@@ -507,6 +568,7 @@ class HomeController extends GetxController {
     categories.clear();
     mostOrdered.clear();
     topRated.clear();
+    searchResults.clear();
 
     try {
       _box.remove(_kOffersKey);
@@ -531,6 +593,7 @@ class HomeController extends GetxController {
         fetchMostOrdered(),
         fetchTopRated(),
       ]);
+      _applySearch();
     } catch (e) {
       _handleError(e);
     }
@@ -577,6 +640,7 @@ class HomeController extends GetxController {
     try {
       final list = await repo.fetchMostOrdered();
       mostOrdered.assignAll(list);
+      _applySearch();
 
       _cacheList(_kMostKey, list.map((e) => e.toJson()).toList());
     } catch (e) {
@@ -592,6 +656,7 @@ class HomeController extends GetxController {
     try {
       final list = await repo.fetchTopRated();
       topRated.assignAll(list);
+      _applySearch();
 
       _cacheList(_kTopKey, list.map((e) => e.toJson()).toList());
     } catch (e) {
@@ -680,8 +745,8 @@ class HomeController extends GetxController {
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+            color: Color(0xFFFFFCF6),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -691,7 +756,7 @@ class HomeController extends GetxController {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
+                  color: AppColors.brand.withOpacity(.28),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -700,12 +765,12 @@ class HomeController extends GetxController {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFE2D7),
+                      color: AppColors.brand.withOpacity(.16),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(
                       Icons.location_on_rounded,
-                      color: Color(0xFF6F3F17),
+                      color: AppColors.brand,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -752,7 +817,9 @@ class HomeController extends GetxController {
                         Get.back();
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF6F3F17)),
+                        side: BorderSide(
+                          color: AppColors.brand.withOpacity(.85),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -761,7 +828,7 @@ class HomeController extends GetxController {
                       child: const Text(
                         'تغيير المكان',
                         style: TextStyle(
-                          color: Color(0xFF6F3F17),
+                          color: AppColors.brand,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -775,7 +842,7 @@ class HomeController extends GetxController {
                         Get.back();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6F3F17),
+                        backgroundColor: AppColors.brand,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -837,8 +904,8 @@ class HomeController extends GetxController {
           child: Container(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+              color: Color(0xFFFFFCF6),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -848,7 +915,7 @@ class HomeController extends GetxController {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5E7EB),
+                    color: AppColors.brand.withOpacity(.28),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -857,12 +924,12 @@ class HomeController extends GetxController {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFE2D7),
+                        color: AppColors.brand.withOpacity(.16),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(
                         Icons.location_on_rounded,
-                        color: Color(0xFF6F3F17),
+                        color: AppColors.brand,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -896,16 +963,16 @@ class HomeController extends GetxController {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF7F4EF),
+                    color: const Color(0xFFFFF7E7),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE5E7F0)),
+                    border: Border.all(color: AppColors.brand.withOpacity(.28)),
                   ),
                   child: Row(
                     children: const [
                       Icon(
                         Icons.place_rounded,
                         size: 20,
-                        color: Color(0xFF6F3F17),
+                        color: AppColors.brand,
                       ),
                       SizedBox(width: 8),
                       Expanded(
@@ -932,7 +999,7 @@ class HomeController extends GetxController {
                       Get.back();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6F3F17),
+                      backgroundColor: AppColors.brand,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),

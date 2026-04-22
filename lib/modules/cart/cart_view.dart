@@ -6,12 +6,8 @@ import 'package:mandena/modules/checkout/checkout_view.dart';
 
 const _kPrimary = Color(0xFFFF5A00);
 const _kPrimaryDark = Color(0xFFFF2E00);
-const _kPageBg = Color(0xFFF5F5F7);
-const _kCard = Colors.white;
 const _kText = Color(0xFF111827);
 const _kMuted = Color(0xFF8B95A7);
-// ignore: unused_element
-const _kBorder = Color(0xFFE9EDF3);
 
 class CartView extends StatelessWidget {
   const CartView({super.key});
@@ -19,11 +15,13 @@ class CartView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<CartController>();
+    final theme = Theme.of(context);
+    final pageBg = theme.scaffoldBackgroundColor;
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: _kPageBg,
+        backgroundColor: pageBg,
         body: Column(
           children: [
             Container(
@@ -75,13 +73,6 @@ class CartView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // IconButton(
-                    //   onPressed: () => Get.back(),
-                    //   icon: const Icon(
-                    //     Icons.arrow_back_ios_new_rounded,
-                    //     color: Colors.white,
-                    //   ),
-                    // ),
                   ],
                 ),
               ),
@@ -180,32 +171,48 @@ class _CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final textColor = theme.textTheme.bodyLarge?.color ?? _kText;
+    final qtyBg = isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
+    final imageFallback = isDark
+        ? const Color(0xFF1F2937)
+        : const Color(0xFFF2EEE8);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _kCard,
+        color: cardColor,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.05),
+            color: Colors.black.withOpacity(isDark ? .18 : .05),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Row(
+        textDirection: TextDirection.rtl,
         children: [
-          InkWell(
-            onTap: onRemove,
-            child: const Padding(
-              padding: EdgeInsets.all(6),
-              child: Icon(
-                Icons.delete_outline_rounded,
-                color: Colors.redAccent,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              width: 92,
+              height: 92,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: imageFallback,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.fastfood_rounded, color: _kPrimary),
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -214,8 +221,9 @@ class _CartItemCard extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _kText,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: textColor,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                   ),
@@ -231,21 +239,32 @@ class _CartItemCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Row(
+                  textDirection: TextDirection.rtl,
                   children: [
+                    Text(
+                      '${(price * qty).toStringAsFixed(0)} د.ل',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const Spacer(),
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
+                        color: qtyBg,
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Row(
+                        textDirection: TextDirection.rtl,
                         children: [
                           _QtyBtn(icon: Icons.add, onTap: onInc),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             child: Text(
                               '$qty',
-                              style: const TextStyle(
-                                color: _kText,
+                              style: TextStyle(
+                                color: textColor,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -254,34 +273,19 @@ class _CartItemCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      '${(price * qty).toStringAsFixed(0)} د.ل',
-                      style: const TextStyle(
-                        color: _kText,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
-                    ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: SizedBox(
-              width: 92,
-              height: 92,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: const Color(0xFFF2EEE8),
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.fastfood_rounded, color: _kPrimary),
-                ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: onRemove,
+            child: const Padding(
+              padding: EdgeInsets.all(6),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: Colors.redAccent,
               ),
             ),
           ),
@@ -298,13 +302,14 @@ class _QtyBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? _kText;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: SizedBox(
         width: 36,
         height: 34,
-        child: Icon(icon, color: _kText, size: 18),
+        child: Icon(icon, color: textColor, size: 18),
       ),
     );
   }
@@ -316,11 +321,16 @@ class _SummaryBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final pageBg = theme.scaffoldBackgroundColor;
+    final cardColor = theme.cardColor;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-      decoration: const BoxDecoration(
-        color: _kPageBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      decoration: BoxDecoration(
+        color: pageBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
       ),
       child: Column(
         children: [
@@ -328,11 +338,11 @@ class _SummaryBlock extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _kCard,
+              color: cardColor,
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(.05),
+                  color: Colors.black.withOpacity(isDark ? .18 : .05),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -341,10 +351,11 @@ class _SummaryBlock extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text(
+                Text(
                   'ملخص الطلب',
+                  textAlign: TextAlign.right,
                   style: TextStyle(
-                    color: _kText,
+                    color: theme.textTheme.bodyLarge?.color ?? _kText,
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
@@ -408,16 +419,18 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? _kText;
     final style = TextStyle(
-      color: highlight ? _kPrimary : _kText,
+      color: highlight ? _kPrimary : textColor,
       fontWeight: highlight ? FontWeight.w900 : FontWeight.w700,
       fontSize: highlight ? 18 : 14,
     );
     return Row(
+      textDirection: TextDirection.rtl,
       children: [
-        Text(value, style: style),
+        Text(label, style: style.copyWith(color: textColor, fontSize: 15)),
         const Spacer(),
-        Text(label, style: style.copyWith(color: _kText, fontSize: 15)),
+        Text(value, style: style),
       ],
     );
   }
@@ -428,6 +441,13 @@ class _EmptyCartView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.textTheme.bodyLarge?.color ?? _kText;
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? _kMuted;
+    final softFill = isDark ? const Color(0xFF1F2937) : const Color(0xFFFFF2EA);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -438,7 +458,7 @@ class _EmptyCartView extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF2EA),
+                color: softFill,
                 borderRadius: BorderRadius.circular(50),
               ),
               child: const Icon(
@@ -448,19 +468,20 @@ class _EmptyCartView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'السلة فارغة حالياً',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color: _kText,
+                color: textColor,
                 fontWeight: FontWeight.w900,
                 fontSize: 20,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'ابدأ بإضافة أصنافك المفضلة من القائمة الرئيسية',
               textAlign: TextAlign.center,
-              style: TextStyle(color: _kMuted, height: 1.5),
+              style: TextStyle(color: mutedColor, height: 1.5),
             ),
           ],
         ),

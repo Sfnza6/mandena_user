@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mandena/home/widgets/hero_tags.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mandena/core/api_service.dart';
 import 'package:mandena/core/session.dart';
@@ -43,11 +44,19 @@ class FavoritesController extends GetxController {
     _lastSnackAt = now;
 
     Get.rawSnackbar(
-      borderRadius: 14,
+      snackPosition: SnackPosition.TOP,
+      borderRadius: 16,
       snackStyle: SnackStyle.FLOATING,
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       backgroundColor: bg,
+      boxShadows: const [
+        BoxShadow(
+          color: Color(0x22000000),
+          blurRadius: 16,
+          offset: Offset(0, 8),
+        ),
+      ],
       messageText: Directionality(
         textDirection: TextDirection.rtl,
         child: Column(
@@ -251,6 +260,14 @@ class FavoritesController extends GetxController {
     }
   }
 
+  Future<bool> _ensureBoundToSession() async {
+    final currentUserId = await Session.userId();
+    if (currentUserId != _userId) {
+      await bindToCurrentUser();
+    }
+    return _userId != null && _userId! > 0;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -272,7 +289,7 @@ class FavoritesController extends GetxController {
   }
 
   Future<void> load() async {
-    if (_userId == null) return;
+    if (!await _ensureBoundToSession()) return;
     isBusy.value = true;
     try {
       final r = await _api.get(
@@ -299,7 +316,7 @@ class FavoritesController extends GetxController {
   }
 
   Future<void> toggle(int itemId) async {
-    if (_userId == null) {
+    if (!await _ensureBoundToSession()) {
       _showInfo('الرجاء تسجيل الدخول أولاً');
       return;
     }
@@ -404,8 +421,12 @@ class FavoritesController extends GetxController {
   }
 
   /// ——— فتح تفاصيل الصنف من شاشة المفضلة ———
-  void openFavDetail(Map<String, dynamic> favMap) {
+  void openFavDetail(Map<String, dynamic> favMap, {String? heroTag}) {
     final item = _mapToItem(favMap);
-    Get.toNamed(AppRoutes.itemDetail, arguments: item.toJson());
+    final tag = heroTag ?? itemHeroTagFromModel(item, scope: 'favorites');
+    Get.toNamed(
+      AppRoutes.itemDetail,
+      arguments: withItemHeroArg(item.toJson(), tag),
+    );
   }
 }

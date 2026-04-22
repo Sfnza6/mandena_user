@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mandena/app_routes.dart';
+import 'package:mandena/home/widgets/hero_tags.dart';
 import '../../data/models/item.dart';
 import 'home_ui.dart';
 
@@ -13,6 +14,7 @@ class TopRatedTile extends StatelessWidget {
     required this.isFavorite,
     this.onToggleFavorite,
     this.onAddToCart,
+    this.heroTag,
   });
 
   final ItemModel item;
@@ -21,6 +23,7 @@ class TopRatedTile extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback? onToggleFavorite;
   final VoidCallback? onAddToCart;
+  final String? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -71,11 +74,17 @@ class TopRatedTile extends StatelessWidget {
                     SizedBox(
                       width: imgSize,
                       height: imgSize,
-                      child: Image.network(
-                        item.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Container(color: theme.canvasColor),
+                      child: Hero(
+                        tag:
+                            heroTag ??
+                            itemHeroTagFromModel(item, scope: 'top-rated-tile'),
+                        transitionOnUserGestures: true,
+                        child: Image.network(
+                          item.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Container(color: theme.canvasColor),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),

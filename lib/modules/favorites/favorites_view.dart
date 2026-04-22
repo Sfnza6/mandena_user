@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mandena/home/widgets/hero_tags.dart';
 import 'favorites_controller.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -16,11 +17,21 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = Get.find<FavoritesController>()..load();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final pageBg = theme.scaffoldBackgroundColor;
+    final cardColor = theme.cardColor;
+    final textColor = theme.textTheme.bodyLarge?.color ?? kText;
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? kMuted;
+    final imageFallback = isDark
+        ? const Color(0xFF1F2937)
+        : const Color(0xFFF2EEE8);
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: kPageBg,
+        backgroundColor: pageBg,
         body: Column(
           children: [
             Container(
@@ -58,11 +69,11 @@ class FavoritesScreen extends StatelessWidget {
                 }
 
                 if (f.favorites.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'لا توجد عناصر مضافة إلى المفضلة بعد',
                       style: TextStyle(
-                        color: kMuted,
+                        color: mutedColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -83,13 +94,21 @@ class FavoritesScreen extends StatelessWidget {
                     final itemId =
                         int.tryParse('${e['item_id'] ?? e['id'] ?? 0}') ?? 0;
 
+                    final heroTag = itemHeroTag(
+                      id: e['id'] ?? e['item_id'] ?? itemId,
+                      imageUrl: image,
+                      name: name,
+                      scope: 'favorites-list',
+                      extra: i,
+                    );
+
                     return InkWell(
-                      onTap: () => f.openFavDetail(e),
+                      onTap: () => f.openFavDetail(e, heroTag: heroTag),
                       borderRadius: BorderRadius.circular(18),
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: kCard,
+                          color: cardColor,
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
@@ -103,33 +122,37 @@ class FavoritesScreen extends StatelessWidget {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(14),
-                              child: image.isNotEmpty
-                                  ? Image.network(
-                                      image,
-                                      width: 96,
-                                      height: 96,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
+                              child: Hero(
+                                tag: heroTag,
+                                transitionOnUserGestures: true,
+                                child: image.isNotEmpty
+                                    ? Image.network(
+                                        image,
                                         width: 96,
                                         height: 96,
-                                        color: const Color(0xFFF2EEE8),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          width: 96,
+                                          height: 96,
+                                          color: imageFallback,
+                                          alignment: Alignment.center,
+                                          child: const Icon(
+                                            Icons.fastfood_rounded,
+                                            color: kPrimary,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        width: 96,
+                                        height: 96,
+                                        color: imageFallback,
                                         alignment: Alignment.center,
                                         child: const Icon(
                                           Icons.fastfood_rounded,
                                           color: kPrimary,
                                         ),
                                       ),
-                                    )
-                                  : Container(
-                                      width: 96,
-                                      height: 96,
-                                      color: const Color(0xFFF2EEE8),
-                                      alignment: Alignment.center,
-                                      child: const Icon(
-                                        Icons.fastfood_rounded,
-                                        color: kPrimary,
-                                      ),
-                                    ),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -141,8 +164,8 @@ class FavoritesScreen extends StatelessWidget {
                                     textAlign: TextAlign.right,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: kText,
+                                    style: TextStyle(
+                                      color: textColor,
                                       fontWeight: FontWeight.w900,
                                       fontSize: 16,
                                     ),
@@ -153,15 +176,15 @@ class FavoritesScreen extends StatelessWidget {
                                     textAlign: TextAlign.right,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: kMuted,
+                                    style: TextStyle(
+                                      color: mutedColor,
                                       height: 1.4,
                                       fontSize: 12.5,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    '$price ر.س',
+                                    '$price د.ل',
                                     style: const TextStyle(
                                       color: kPrimary,
                                       fontWeight: FontWeight.w900,
@@ -175,7 +198,10 @@ class FavoritesScreen extends StatelessWidget {
                                         icon: Icons.shopping_cart_outlined,
                                         bg: kPrimary,
                                         fg: Colors.white,
-                                        onTap: () => f.openFavDetail(e),
+                                        onTap: () => f.openFavDetail(
+                                          e,
+                                          heroTag: heroTag,
+                                        ),
                                       ),
                                       const SizedBox(width: 8),
                                       _MiniAction(

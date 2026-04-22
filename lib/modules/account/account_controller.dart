@@ -10,6 +10,7 @@ import '../../data/models/user.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../core/api_service.dart';
 import '../../app_routes.dart';
+import '../../core/theme_service.dart';
 import '../root/root_controller.dart';
 
 class AccountController extends GetxController {
@@ -177,6 +178,7 @@ class AccountController extends GetxController {
 
   int? _lastBoundUserId;
   late final GetStorage _box;
+
   static const String _kProfileKey = 'account_profile_v1';
   static const String _kProfileTsKey = 'account_profile_ts_v1';
   static const int _cacheMaxAgeMinutes = 5;
@@ -192,15 +194,11 @@ class AccountController extends GetxController {
     try {
       await GetStorage.init();
     } catch (_) {}
+
     _box = GetStorage();
 
-    final storedDark = _box.read(_kDarkModeKey);
-    if (storedDark is bool) {
-      isDarkMode.value = storedDark;
-    } else {
-      isDarkMode.value = false;
-    }
-    _applyTheme(isDarkMode.value);
+    isDarkMode.value = ThemeService().theme == ThemeMode.dark;
+    Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
 
     _loadCachedProfile();
   }
@@ -236,53 +234,15 @@ class AccountController extends GetxController {
     } catch (_) {}
   }
 
-  void _applyTheme(bool dark) {
-    if (dark) {
-      final darkBg = const Color(0xFF050816);
-      Get.changeTheme(
-        ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: darkBg,
-          cardColor: const Color(0xFF111827),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF050816),
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6F3F17),
-            brightness: Brightness.dark,
-          ),
-        ),
-      );
-    } else {
-      final lightBg = const Color(0xFFF7F7FA);
-      Get.changeTheme(
-        ThemeData(
-          brightness: Brightness.light,
-          scaffoldBackgroundColor: lightBg,
-          cardColor: Colors.white,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black87,
-            elevation: 0,
-          ),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6F3F17),
-            brightness: Brightness.light,
-          ),
-        ),
-      );
-    }
-  }
-
-  void toggleDarkMode() {
+  Future<void> toggleDarkMode() async {
     final newVal = !isDarkMode.value;
     isDarkMode.value = newVal;
+
     try {
-      _box.write(_kDarkModeKey, newVal);
+      await _box.write(_kDarkModeKey, newVal);
     } catch (_) {}
-    _applyTheme(newVal);
+
+    Get.changeThemeMode(newVal ? ThemeMode.dark : ThemeMode.light);
   }
 
   @override
@@ -387,9 +347,6 @@ class AccountController extends GetxController {
     Get.offAllNamed(AppRoutes.login);
   }
 
-  /// ---------------------------------------------------------
-  ///  تغيير كلمة المرور (منع الحساب التجريبي)
-  /// ---------------------------------------------------------
   Future<void> changePassword({
     required String oldPassword,
     required String newPassword,
@@ -501,9 +458,6 @@ class AccountController extends GetxController {
     }
   }
 
-  /// ---------------------------------------------------------
-  /// حذف الحساب (منع الحساب التجريبي)
-  /// ---------------------------------------------------------
   Future<void> deleteAccount() async {
     final local = await Session.readLoggedIn();
     bool isDemo = false;
@@ -555,9 +509,6 @@ class AccountController extends GetxController {
     }
   }
 
-  /// ---------------------------------------------------------
-  ///  منع الحساب التجريبي من فتح الطلبات
-  /// ---------------------------------------------------------
   void goToOrders() async {
     final local = await Session.readLoggedIn();
     bool isDemo = false;
@@ -583,7 +534,6 @@ class AccountController extends GetxController {
     Get.toNamed(AppRoutes.orders);
   }
 
-  /// منع فتح السلة في الحساب التجريبي
   void goToCart() async {
     final local = await Session.readLoggedIn();
     bool isDemo = false;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mandena/home/widgets/hero_tags.dart';
 import 'items_controller.dart';
 import '../../data/models/item.dart';
 
@@ -8,7 +9,7 @@ class ItemsView extends GetView<ItemsController> {
 
   // 🎨 نفس ألوان طلباتي / Root
   static const Color kPrimary = Color(0xFF6F3F17); // البني الثقيل
-  static const Color kBg = Color(0xFFF7F4EF);      // خلفية كريمية ناعمة
+  static const Color kBg = Color(0xFFF7F4EF); // خلفية كريمية ناعمة
   static const Color kCard = Colors.white;
   static const Color kBorder = Color(0xFFE0D6CC);
 
@@ -19,11 +20,9 @@ class ItemsView extends GetView<ItemsController> {
     const Color brown = kPrimary;
     final Color bgColor = isDark ? theme.scaffoldBackgroundColor : kBg;
     final Color cardColor = isDark ? theme.cardColor : kCard;
-    final Color borderColor =
-        isDark ? Colors.white24 : kBorder;
+    final Color borderColor = isDark ? Colors.white24 : kBorder;
     final Color primaryIconColor = isDark ? brown : brown;
-    final Color titleColor =
-        isDark ? Colors.white : Colors.black87;
+    final Color titleColor = isDark ? Colors.white : Colors.black87;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -67,9 +66,7 @@ class ItemsView extends GetView<ItemsController> {
                   onChanged: controller.onSearchChanged,
                   textDirection: TextDirection.rtl,
                   cursorColor: primaryIconColor,
-                  style: TextStyle(
-                    color: titleColor,
-                  ),
+                  style: TextStyle(color: titleColor),
                   decoration: InputDecoration(
                     hintText: 'ابحث عن صنف',
                     hintStyle: TextStyle(
@@ -124,9 +121,14 @@ class ItemsView extends GetView<ItemsController> {
                   itemBuilder: (_, i) {
                     final it = items[i];
                     // ✅ نفس المنطق: فتح التفاصيل
+                    final heroTag = itemHeroTagFromModel(
+                      it,
+                      scope: 'items-grid',
+                      extra: i,
+                    );
                     return GestureDetector(
-                      onTap: () => controller.openDetail(it),
-                      child: _ItemCard(it),
+                      onTap: () => controller.openDetail(it, heroTag: heroTag),
+                      child: _ItemCard(it, heroTag: heroTag),
                     );
                   },
                 );
@@ -140,8 +142,9 @@ class ItemsView extends GetView<ItemsController> {
 }
 
 class _ItemCard extends StatelessWidget {
-  const _ItemCard(this.it);
+  const _ItemCard(this.it, {required this.heroTag});
   final ItemModel it;
+  final String heroTag;
 
   static const Color kPrimary = ItemsView.kPrimary;
   static const Color kCard = ItemsView.kCard;
@@ -154,15 +157,13 @@ class _ItemCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     const Color brown = kPrimary;
     final Color cardColor = isDark ? theme.cardColor : kCard;
-    final Color borderColor =
-        isDark ? Colors.white24 : kBorder.withOpacity(0.8);
-    final Color textMain =
-        isDark ? Colors.white : Colors.black87;
-    final Color textSub =
-        isDark ? Colors.white70 : Colors.black54;
+    final Color borderColor = isDark
+        ? Colors.white24
+        : kBorder.withOpacity(0.8);
+    final Color textMain = isDark ? Colors.white : Colors.black87;
+    final Color textSub = isDark ? Colors.white70 : Colors.black54;
     final Color priceColor = brown;
-    final Color placeholderBg =
-        isDark ? theme.scaffoldBackgroundColor : kBg;
+    final Color placeholderBg = isDark ? theme.scaffoldBackgroundColor : kBg;
     final Color iconColor = brown; // 🌓 في الوضع الليلي أيضاً بني
 
     return Container(
@@ -185,16 +186,18 @@ class _ItemCard extends StatelessWidget {
           // صورة الصنف
           AspectRatio(
             aspectRatio: 4 / 3,
-            child: it.imageUrl.isNotEmpty
-                ? Image.network(
-                    it.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _placeholder(
-                      placeholderBg,
-                      iconColor,
-                    ),
-                  )
-                : _placeholder(placeholderBg, iconColor),
+            child: Hero(
+              tag: heroTag,
+              transitionOnUserGestures: true,
+              child: it.imageUrl.isNotEmpty
+                  ? Image.network(
+                      it.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          _placeholder(placeholderBg, iconColor),
+                    )
+                  : _placeholder(placeholderBg, iconColor),
+            ),
           ),
 
           // التفاصيل
@@ -219,10 +222,7 @@ class _ItemCard extends StatelessWidget {
                   it.description,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: textSub,
-                    fontSize: 11.5,
-                  ),
+                  style: TextStyle(color: textSub, fontSize: 11.5),
                   textAlign: TextAlign.right,
                 ),
                 const SizedBox(height: 8),
@@ -246,12 +246,9 @@ class _ItemCard extends StatelessWidget {
   }
 
   static Widget _placeholder(Color bg, Color iconColor) => Container(
-        color: bg,
-        child: Center(
-          child: Icon(
-            Icons.image_not_supported_outlined,
-            color: iconColor,
-          ),
-        ),
-      );
+    color: bg,
+    child: Center(
+      child: Icon(Icons.image_not_supported_outlined, color: iconColor),
+    ),
+  );
 }

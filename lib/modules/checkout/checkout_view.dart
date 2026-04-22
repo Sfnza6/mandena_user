@@ -1,4 +1,3 @@
-// lib/modules/checkout/checkout_view.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mandena/modules/cart/cart_controller.dart';
@@ -7,62 +6,72 @@ import 'checkout_controller.dart';
 class CheckoutView extends StatelessWidget {
   const CheckoutView({super.key});
 
-  // لون البراند
-  static const _brown = Color(0xFF6F3F17);
-
-  // ignore: unused_field
-  static const _light = Color(0xFFF6F5F3);
+  static const _brand = Color(0xFFFF5A00);
+  static const _brandDeep = Color(0xFFE14D00);
+  static const _brandSoft = Color(0xFFFFEEE4);
+  static const _brandStroke = Color(0xFFFFD2BC);
+  static const _textDark = Color(0xFF1F2937);
+  static const _textMuted = Color(0xFF6B7280);
 
   @override
   Widget build(BuildContext context) {
     final c = Get.put(CheckoutController());
     final cart = Get.find<CartController>();
-
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final scaffoldBg =
-        theme.scaffoldBackgroundColor; // الخلفية الأساسية من الثيم
+    final bg = theme.scaffoldBackgroundColor;
     final cardColor = theme.cardColor;
-    final borderColor = theme.dividerColor.withOpacity(
-      isDark ? 0.4 : 0.7,
-    ); // حدود ديناميكية
-    final subtitleColor = (theme.textTheme.bodySmall?.color ?? Colors.black54)
-        .withOpacity(isDark ? 0.7 : 0.6);
+    final textDark = theme.textTheme.bodyLarge?.color ?? _textDark;
+    final textMuted =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? _textMuted;
+    final brandSoft = isDark ? const Color(0xFF1F2937) : _brandSoft;
+    final brandStroke = isDark ? Colors.white10 : _brandStroke;
 
-    // تسمية واجهة لطريقة الدفع المختارة (عرض فقط)
     final RxString paymentLabel = ''.obs;
     paymentLabel.value = _paymentName(c.payment.value);
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: scaffoldBg,
+        backgroundColor: bg,
         appBar: AppBar(
-          title: const Text(
-            'إتمام الطلب',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontWeight: FontWeight.w700, color: _brown),
-          ),
+          backgroundColor: bg,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          foregroundColor: textDark,
           centerTitle: true,
-          backgroundColor:
-              theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
-          elevation: 0.4,
-          foregroundColor: _brown,
-          iconTheme: const IconThemeData(color: _brown),
+          title: Text(
+            'إتمام الطلب',
+            style: TextStyle(
+              color: textDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+            ),
+          ),
         ),
         body: Form(
           key: c.formKey,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
             children: [
-              const _Section('معلومات التوصيل'),
+              const _HeroBanner(),
+              const SizedBox(height: 18),
+              _StepStrip(
+                cardColor: cardColor,
+                brandStroke: brandStroke,
+                textDark: textDark,
+              ),
+              const SizedBox(height: 18),
 
-              // 🔥 هنا نعرض العنوان الافتراضي المختار (نفس اللي في السلة)
+              _SectionTitle(
+                'عنوان التوصيل',
+                icon: Icons.place_outlined,
+                textDark: textDark,
+                brandSoft: brandSoft,
+              ),
               Obx(() {
                 String defaultName = '';
                 try {
-                  // نحاول قراءة selectedAddressName لو موجودة
                   final dynamic maybeRx = (cart as dynamic).selectedAddressName;
                   if (maybeRx != null) {
                     defaultName = (maybeRx.value as String?)?.trim() ?? '';
@@ -81,166 +90,114 @@ class CheckoutView extends StatelessWidget {
                           'اختر العنوان من عناويني');
 
                 final String subtitle = hasSelected
-                    ? 'هذا هو عنوان التوصيل الحالي، يمكنك تغييره بالضغط هنا'
-                    : 'اختر العنوان من عناوينك المحفوظة أو أدخل عنوان جديد';
+                    ? 'العنوان الحالي المحدد للطلب، يمكنك تغييره في أي وقت.'
+                    : 'اختر عنوان محفوظ أو أضف عنوانًا جديدًا للمتابعة.';
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: borderColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDark
-                            ? Colors.black.withOpacity(.35)
-                            : Colors.black.withOpacity(.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    leading: const Icon(
-                      Icons.location_on_outlined,
-                      color: _brown,
-                    ),
-                    title: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: subtitleColor),
-                    ),
-                    trailing: const Icon(Icons.chevron_left, color: _brown),
-                    onTap: c.pickAddress,
-                  ),
+                return _ActionCard(
+                  icon: Icons.location_on_rounded,
+                  title: label,
+                  subtitle: subtitle,
+                  trailingText: hasSelected ? 'تغيير' : 'اختيار',
+                  onTap: c.pickAddress,
+                  cardColor: cardColor,
+                  textDark: textDark,
+                  textMuted: textMuted,
+                  brandSoft: brandSoft,
+                  brandStroke: brandStroke,
                 );
               }),
 
-              _Input(
-                label: 'العنوان',
+              _NoteInput(
+                label: 'تفاصيل إضافية',
                 controller: c.addressCtrl,
                 validator: (v) => c.statusOrder.value == 'delivery'
                     ? c.req(v, 'العنوان')
                     : null,
                 hint: 'المدينة / الشارع / أقرب معلم...',
                 maxLines: 2,
+                cardColor: cardColor,
+                textMuted: textMuted,
+                brandStroke: brandStroke,
               ),
-              const SizedBox(height: 10),
 
-              const _Section('طريقة الاستلام'),
+              const SizedBox(height: 10),
+              _SectionTitle(
+                'طريقة الاستلام',
+                icon: Icons.delivery_dining,
+                textDark: textDark,
+                brandSoft: brandSoft,
+              ),
               Obx(
                 () => Row(
                   children: [
-                    ChoiceChip(
-                      label: const Text('توصيل'),
-                      selected: c.statusOrder.value == 'delivery',
-                      onSelected: (_) => c.statusOrder.value = 'delivery',
-                      selectedColor: _brown.withOpacity(.12),
-                      labelStyle: TextStyle(
-                        color: c.statusOrder.value == 'delivery'
-                            ? _brown
-                            : (theme.textTheme.bodyMedium?.color ??
-                                  Colors.black87),
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: _ModeCard(
+                        title: 'توصيل',
+                        subtitle: 'يوصل لعند بابك',
+                        icon: Icons.delivery_dining_rounded,
+                        selected: c.statusOrder.value == 'delivery',
+                        onTap: () => c.statusOrder.value = 'delivery',
+                        cardColor: cardColor,
+                        textDark: textDark,
+                        textMuted: textMuted,
+                        brandSoft: brandSoft,
+                        brandStroke: brandStroke,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    ChoiceChip(
-                      label: const Text('استلام'),
-                      selected: c.statusOrder.value == 'pickup',
-                      onSelected: (_) => c.statusOrder.value = 'pickup',
-                      selectedColor: _brown.withOpacity(.12),
-                      labelStyle: TextStyle(
-                        color: c.statusOrder.value == 'pickup'
-                            ? _brown
-                            : (theme.textTheme.bodyMedium?.color ??
-                                  Colors.black87),
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ModeCard(
+                        title: 'استلام',
+                        subtitle: 'من الفرع مباشرة',
+                        icon: Icons.storefront_rounded,
+                        selected: c.statusOrder.value == 'pickup',
+                        onTap: () => c.statusOrder.value = 'pickup',
+                        cardColor: cardColor,
+                        textDark: textDark,
+                        textMuted: textMuted,
+                        brandSoft: brandSoft,
+                        brandStroke: brandStroke,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
-
-              // ======================= طريقة الدفع =======================
-              const _Section('طريقة الدفع'),
+              const SizedBox(height: 18),
+              _SectionTitle(
+                'الدفع',
+                icon: Icons.account_balance_wallet_outlined,
+                textDark: textDark,
+                brandSoft: brandSoft,
+              ),
               Obx(() {
                 final title = paymentLabel.value.isEmpty
                     ? _paymentName(c.payment.value)
                     : paymentLabel.value;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: borderColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDark
-                            ? Colors.black.withOpacity(.35)
-                            : Colors.black.withOpacity(.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                return _ActionCard(
+                  icon: Icons.wallet_rounded,
+                  title: title,
+                  subtitle: 'اضغط لتغيير طريقة الدفع المناسبة لك.',
+                  trailingText: 'تعديل',
+                  onTap: () => _showPaymentSheet(
+                    context: context,
+                    c: c,
+                    setLabel: (txt) => paymentLabel.value = txt,
+                    bg: bg,
+                    cardColor: cardColor,
+                    textDark: textDark,
+                    textMuted: textMuted,
+                    brandSoft: brandSoft,
+                    brandStroke: brandStroke,
                   ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    leading: const Icon(
-                      Icons.account_balance_wallet_outlined,
-                      color: _brown,
-                    ),
-                    title: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'حدد طريقة الدفع',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: subtitleColor),
-                    ),
-                    trailing: const Icon(
-                      Icons.keyboard_arrow_down,
-                      color: _brown,
-                    ),
-                    onTap: () => _showPaymentSheet(
-                      context: context,
-                      c: c,
-                      setLabel: (txt) => paymentLabel.value = txt,
-                    ),
-                    onLongPress: () => _showPaymentSheet(
-                      context: context,
-                      c: c,
-                      setLabel: (txt) => paymentLabel.value = txt,
-                    ),
-                  ),
+                  cardColor: cardColor,
+                  textDark: textDark,
+                  textMuted: textMuted,
+                  brandSoft: brandSoft,
+                  brandStroke: brandStroke,
                 );
               }),
 
-              // الراديو القديم (مخفي – منطق فقط)
               Visibility(
                 visible: false,
                 child: Obx(
@@ -250,93 +207,105 @@ class CheckoutView extends StatelessWidget {
                         value: 0,
                         groupValue: c.payment.value,
                         onChanged: (v) => c.payment.value = v ?? 0,
-                        activeColor: _brown,
+                        activeColor: _brand,
                       ),
-                      const Text('نقدًا عند التسليم'),
+                      Text(
+                        'نقدًا عند التسليم',
+                        style: TextStyle(color: textDark),
+                      ),
                       const SizedBox(width: 18),
                       Radio<int>(
                         value: 1,
                         groupValue: c.payment.value,
                         onChanged: (v) => c.payment.value = v ?? 0,
-                        activeColor: _brown,
+                        activeColor: _brand,
                       ),
-                      const Text('بطاقة/أخرى'),
+                      Text('بطاقة/أخرى', style: TextStyle(color: textDark)),
                     ],
                   ),
                 ),
               ),
 
-              // ==================== نهاية واجهة الدفع ====================
-              const SizedBox(height: 20),
-              const _Section('مراجعة المبلغ'),
-              _Card(
-                child: Obx(
-                  () => Column(
-                    children: [
-                      _row('سعر الأصناف', cart.subtotal.value, theme),
-                      _row('التوصيل', cart.delivery.value, theme),
-                      _row('الخدمات', cart.services.value, theme),
-                      const SizedBox(height: 8),
-                      Row(
+              const SizedBox(height: 18),
+              _SectionTitle(
+                'ملخص المبلغ',
+                icon: Icons.receipt_long_outlined,
+                textDark: textDark,
+                brandSoft: brandSoft,
+              ),
+              _BillSummary(
+                cart: cart,
+                cardColor: cardColor,
+                textDark: textDark,
+                textMuted: textMuted,
+                brandSoft: brandSoft,
+                brandStroke: brandStroke,
+                isDark: isDark,
+              ),
+
+              const SizedBox(height: 18),
+              Obx(
+                () => Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _brand.withOpacity(.18),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: c.isPlacing.value ? null : c.placeOrder,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _brand,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        textDirection: TextDirection.rtl,
                         children: [
-                          Expanded(
-                            child: Text(
-                              'الإجمالي',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w900,
+                          if (c.isPlacing.value)
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          else
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(.18),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_rounded,
+                                color: Colors.white,
+                                size: 18,
                               ),
                             ),
-                          ),
+                          const SizedBox(width: 12),
                           Text(
-                            'د.ل ${cart.total.toStringAsFixed(0)}',
+                            c.isPlacing.value
+                                ? 'جارٍ إرسال الطلب...'
+                                : 'تأكيد وإرسال الطلب',
                             style: const TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 16,
-                              color: _brown,
                             ),
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-              Obx(
-                () => SizedBox(
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: c.isPlacing.value ? null : c.placeOrder,
-                    icon: c.isPlacing.value
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.check_circle_outline,
-                            color: Colors.white,
-                          ),
-                    label: Text(
-                      c.isPlacing.value ? 'جارٍ الإرسال...' : 'تأكيد الطلب',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _brown,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
@@ -349,46 +318,20 @@ class CheckoutView extends StatelessWidget {
     );
   }
 
-  static Widget _row(String label, num v, ThemeData theme) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodyMedium?.color,
-            ),
-          ),
-        ),
-        Text(
-          'د.ل ${v.toStringAsFixed(0)}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w700, color: _brown),
-        ),
-      ],
-    ),
-  );
-
   static String _paymentName(int v) =>
       (v == 0) ? 'نقدًا عند التسليم' : 'بطاقة/أخرى';
 
-  // =============== BottomSheet ===============
   static Future<void> _showPaymentSheet({
     required BuildContext context,
     required CheckoutController c,
     required void Function(String label) setLabel,
+    required Color bg,
+    required Color cardColor,
+    required Color textDark,
+    required Color textMuted,
+    required Color brandSoft,
+    required Color brandStroke,
   }) async {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.cardColor;
-    final borderColor = theme.dividerColor.withOpacity(isDark ? 0.4 : 0.7);
-    final surfaceVariant = theme.colorScheme.surfaceContainerHighest;
-
-    // تعريف الخيارات
     final options = <_PayOpt>[
       _PayOpt(
         key: 'cash',
@@ -397,25 +340,6 @@ class CheckoutView extends StatelessWidget {
         asset: 'assets/pay/cash.png',
         fallback: Icons.attach_money_rounded,
       ),
-
-      //**
-      //
-      //
-      //
-      //
-      //
-      //
-      //
-      // */
-
-      //_PayOpt(
-      //key: 'sdad',
-      //label: 'سداد',
-      //groupValue: 1,
-      //asset: 'assets/pay/sdad.png',
-      //fallback: Icons.bolt_rounded,
-      //),
-      //
       _PayOpt(
         key: 'masrafy',
         label: 'مصرفي باي (الجمهورية)',
@@ -437,111 +361,128 @@ class CheckoutView extends StatelessWidget {
         asset: 'assets/pay/installments.png',
         fallback: Icons.account_balance_rounded,
       ),
-      //_PayOpt(
-      //key: 'bank',
-      //label: 'البطاقة المصرفية (أخرى)',
-      //groupValue: 1,
-      //asset: 'assets/pay/bank_card.png',
-      //fallback: Icons.credit_card_rounded,
-      //),
-      //_PayOpt(
-      //key: 'edf3ali',
-      //label: 'ادفعلي',
-      //groupValue: 1,
-      //asset: 'assets/pay/edf3ali.png',
-      //fallback: Icons.payments_rounded,
-      //),
-      //_PayOpt(
-      //key: 'mobicash',
-      //label: 'موبي كاش',
-      //groupValue: 1,
-      //asset: 'assets/pay/mobicash.png',
-      //fallback: Icons.qr_code_scanner_rounded,
-      //),
     ];
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor:
-          theme.bottomSheetTheme.backgroundColor ?? theme.colorScheme.surface,
+      backgroundColor: bg,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.dividerColor.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 46,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(.10),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'حدد طريقة الدفع',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Flexible(
-                child: Obx(() {
-                  final selectedKey = c.gatewayKey.value;
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: options.length,
-                    padding: const EdgeInsets.only(bottom: 8),
-                    itemBuilder: (_, i) => _PaymentTile(
-                      opt: options[i],
-                      selectedKey: selectedKey,
-                      onPick: (opt) {
-                        // ضبط البوابة المختارة
-                        c.setGateway(opt.key);
-                        // ضبط طريقة الدفع 0/1 للحفاظ على منطقك الأصلي
-                        c.payment.value = opt.groupValue;
-                        // تحديث التسمية الظاهرة
-                        setLabel(opt.label);
-                      },
-                      cardColor: cardColor,
-                      borderColor: borderColor,
-                      selectedBg: surfaceVariant,
-                    ),
-                  );
-                }),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: SizedBox(
+                const SizedBox(height: 16),
+                Container(
                   width: double.infinity,
-                  height: 48,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_brand, _brandDeep],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: const Row(
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Color(0x33FFFFFF),
+                        child: Icon(Icons.wallet_rounded, color: Colors.white),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'اختر طريقة الدفع',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'اختر الأنسب لك قبل تأكيد الطلب.',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Flexible(
+                  child: Obx(() {
+                    final selectedKey = c.gatewayKey.value;
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (_, i) => _PaymentOptionTile(
+                        opt: options[i],
+                        selected: selectedKey == options[i].key,
+                        onTap: () {
+                          final opt = options[i];
+                          c.setGateway(opt.key);
+                          c.payment.value = opt.groupValue;
+                          setLabel(opt.label);
+                        },
+                        cardColor: cardColor,
+                        textDark: textDark,
+                        textMuted: textMuted,
+                        brandSoft: brandSoft,
+                        brandStroke: brandStroke,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(ctx),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _brown,
+                      backgroundColor: _brand,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                     child: const Text(
-                      'تأكيد',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.w800),
+                      'تم',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -549,36 +490,313 @@ class CheckoutView extends StatelessWidget {
   }
 }
 
-/* ---------------- Widgets صغيرة ---------------- */
+class _HeroBanner extends StatelessWidget {
+  const _HeroBanner();
 
-class _Section extends StatelessWidget {
-  const _Section(this.text);
-  final String text;
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [CheckoutView._brand, CheckoutView._brandDeep],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: CheckoutView._brand.withOpacity(.20),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        textDirection: TextDirection.rtl,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(.18),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: const Icon(
+              Icons.shopping_bag_outlined,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'خطوة أخيرة وطلبك في الطريق',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'راجع العنوان، اختر طريقة الاستلام والدفع، ثم أكد طلبك بسهولة.',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: Colors.white,
+                    height: 1.45,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepStrip extends StatelessWidget {
+  const _StepStrip({
+    required this.cardColor,
+    required this.brandStroke,
+    required this.textDark,
+  });
+
+  final Color cardColor;
+  final Color brandStroke;
+  final Color textDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = const [
+      ('العنوان', Icons.place_outlined),
+      ('الاستلام', Icons.delivery_dining),
+      ('الدفع', Icons.wallet_outlined),
+    ];
+
+    return Row(
+      children: items
+          .map(
+            (e) => Expanded(
+              child: Container(
+                margin: EdgeInsets.only(left: e == items.last ? 0 : 8),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: brandStroke),
+                ),
+                child: Column(
+                  children: [
+                    Icon(e.$2, color: CheckoutView._brand, size: 20),
+                    const SizedBox(height: 6),
+                    Text(
+                      e.$1,
+                      style: TextStyle(
+                        color: textDark,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(
+    this.text, {
+    required this.icon,
+    required this.textDark,
+    required this.brandSoft,
+  });
+
+  final String text;
+  final IconData icon;
+  final Color textDark;
+  final Color brandSoft;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w900,
-          color: CheckoutView._brown,
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        textDirection: TextDirection.rtl,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: brandSoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: CheckoutView._brand, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            text,
+            style: TextStyle(
+              color: textDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 17,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.trailingText,
+    required this.onTap,
+    required this.cardColor,
+    required this.textDark,
+    required this.textMuted,
+    required this.brandSoft,
+    required this.brandStroke,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String trailingText;
+  final VoidCallback onTap;
+  final Color cardColor;
+  final Color textDark;
+  final Color textMuted;
+  final Color brandSoft;
+  final Color brandStroke;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: brandStroke),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.03),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              textDirection: TextDirection.rtl,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: brandSoft,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(icon, color: CheckoutView._brand),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: textDark,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: textMuted,
+                          height: 1.35,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: brandSoft,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    textDirection: TextDirection.rtl,
+                    children: const [
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: CheckoutView._brand,
+                        size: 12,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'تعديل',
+                        style: TextStyle(
+                          color: CheckoutView._brand,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _Input extends StatelessWidget {
-  const _Input({
+class _NoteInput extends StatelessWidget {
+  const _NoteInput({
     required this.label,
+    required this.cardColor,
+    required this.textMuted,
+    required this.brandStroke,
     this.controller,
     this.validator,
     this.hint,
-    // ignore: unused_element_parameter
     this.maxLines = 1,
     // ignore: unused_element_parameter
     this.keyboardType,
@@ -590,39 +808,50 @@ class _Input extends StatelessWidget {
   final TextInputType? keyboardType;
   final String? hint;
   final int maxLines;
+  final Color cardColor;
+  final Color textMuted;
+  final Color brandStroke;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final fillColor =
-        theme.inputDecorationTheme.fillColor ??
-        (isDark ? theme.colorScheme.surface : Colors.white);
-    final borderColor = theme.dividerColor.withOpacity(isDark ? 0.6 : 0.8);
-
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 4),
       child: TextFormField(
         controller: controller,
         validator: validator,
         keyboardType: keyboardType,
         maxLines: maxLines,
+        textAlign: TextAlign.right,
+        textDirection: TextDirection.rtl,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
           filled: true,
-          fillColor: fillColor,
-          labelStyle: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.textTheme.bodyMedium?.color,
+          fillColor: cardColor,
+          labelStyle: TextStyle(color: textMuted, fontWeight: FontWeight.w700),
+          hintStyle: TextStyle(color: textMuted),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
           ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: borderColor),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: brandStroke),
           ),
-          focusedBorder: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-            borderSide: BorderSide(color: CheckoutView._brown),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(
+              color: CheckoutView._brand,
+              width: 1.4,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Colors.redAccent),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Colors.redAccent),
           ),
         ),
       ),
@@ -630,108 +859,96 @@ class _Input extends StatelessWidget {
   }
 }
 
-class _Card extends StatelessWidget {
-  const _Card({required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.cardColor;
-    final borderColor = theme.dividerColor.withOpacity(isDark ? 0.4 : 0.7);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(.35)
-                : Colors.black.withOpacity(.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-/* ---------------- مكوّنات الدفع ---------------- */
-
-class _PayOpt {
-  final String key;
-  final String label;
-  final int groupValue; // 0: نقد | 1: غير ذلك (يحافظ على منطقك)
-  final String asset;
-  final IconData fallback;
-  final Widget? trailing;
-  _PayOpt({
-    required this.key,
-    required this.label,
-    required this.groupValue,
-    required this.asset,
-    required this.fallback,
-    // ignore: unused_element_parameter
-    this.trailing,
-  });
-}
-
-class _PaymentTile extends StatelessWidget {
-  const _PaymentTile({
-    required this.opt,
-    required this.selectedKey,
-    required this.onPick,
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
     required this.cardColor,
-    required this.borderColor,
-    required this.selectedBg,
+    required this.textDark,
+    required this.textMuted,
+    required this.brandSoft,
+    required this.brandStroke,
   });
 
-  final _PayOpt opt;
-  final String selectedKey;
-  final void Function(_PayOpt) onPick;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
   final Color cardColor;
-  final Color borderColor;
-  final Color selectedBg;
+  final Color textDark;
+  final Color textMuted;
+  final Color brandSoft;
+  final Color brandStroke;
 
   @override
   Widget build(BuildContext context) {
-    final selected = selectedKey == opt.key;
-    return InkWell(
-      onTap: () => onPick(opt),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected ? selectedBg : cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor),
+          color: selected ? brandSoft : cardColor,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: selected ? CheckoutView._brand : brandStroke,
+            width: selected ? 1.4 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(selected ? .05 : .025),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _Logo(asset: opt.asset, fallback: opt.fallback),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                opt.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
+            Row(
+              textDirection: TextDirection.rtl,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: selected ? CheckoutView._brand : brandSoft,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: selected ? Colors.white : CheckoutView._brand,
+                    size: 20,
+                  ),
                 ),
+                const Spacer(),
+                if (selected)
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: CheckoutView._brand,
+                    size: 20,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: textDark,
+                fontWeight: FontWeight.w900,
+                fontSize: 15,
               ),
             ),
-            if (opt.trailing != null) opt.trailing!,
-            Radio<String>(
-              value: opt.key,
-              groupValue: selectedKey,
-              onChanged: (_) => onPick(opt),
-              activeColor: CheckoutView._brown,
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              textAlign: TextAlign.right,
+              style: TextStyle(color: textMuted, fontSize: 12.5),
             ),
           ],
         ),
@@ -740,55 +957,236 @@ class _PaymentTile extends StatelessWidget {
   }
 }
 
-class _Logo extends StatelessWidget {
-  const _Logo({required this.asset, required this.fallback});
-  final String asset;
-  final IconData fallback;
+class _BillSummary extends StatelessWidget {
+  const _BillSummary({
+    required this.cart,
+    required this.cardColor,
+    required this.textDark,
+    required this.textMuted,
+    required this.brandSoft,
+    required this.brandStroke,
+    required this.isDark,
+  });
+
+  final CartController cart;
+  final Color cardColor;
+  final Color textDark;
+  final Color textMuted;
+  final Color brandSoft;
+  final Color brandStroke;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 28,
-      height: 28,
-      child: Image.asset(
-        asset,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            Icon(fallback, color: CheckoutView._brown),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: brandStroke),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? .18 : .03),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
+      child: Obx(
+        () => Column(
+          children: [
+            _priceRow('سعر الأصناف', cart.subtotal.value),
+            const SizedBox(height: 10),
+            _priceRow('التوصيل', cart.delivery.value),
+            const SizedBox(height: 10),
+            _priceRow('الخدمات', cart.services.value),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 14),
+              height: 1,
+              color: brandStroke,
+            ),
+            Row(
+              textDirection: TextDirection.rtl,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: brandSoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'الإجمالي',
+                    style: TextStyle(
+                      color: CheckoutView._brand,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  'د.ل ${cart.total.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    color: textDark,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _priceRow(String label, num value) {
+    return Row(
+      textDirection: TextDirection.rtl,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: textMuted, fontWeight: FontWeight.w700),
+        ),
+        const Spacer(),
+        Text(
+          'د.ل ${value.toStringAsFixed(0)}',
+          style: TextStyle(color: textDark, fontWeight: FontWeight.w800),
+        ),
+      ],
     );
   }
 }
 
-// ignore: unused_element
-class _WalletTrailing extends StatelessWidget {
+class _PayOpt {
+  final String key;
+  final String label;
+  final int groupValue;
+  final String asset;
+  final IconData fallback;
+
+  _PayOpt({
+    required this.key,
+    required this.label,
+    required this.groupValue,
+    required this.asset,
+    required this.fallback,
+  });
+}
+
+class _PaymentOptionTile extends StatelessWidget {
+  const _PaymentOptionTile({
+    required this.opt,
+    required this.selected,
+    required this.onTap,
+    required this.cardColor,
+    required this.textDark,
+    required this.textMuted,
+    required this.brandSoft,
+    required this.brandStroke,
+  });
+
+  final _PayOpt opt;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color cardColor;
+  final Color textDark;
+  final Color textMuted;
+  final Color brandSoft;
+  final Color brandStroke;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final borderColor = theme.dividerColor.withOpacity(isDark ? 0.6 : 0.8);
-    final bg = theme.cardColor;
-
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: bg,
-            border: Border.all(color: borderColor),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Text(
-            'شحن  +',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.red),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: selected ? CheckoutView._brand : brandStroke,
+          width: selected ? 1.4 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            textDirection: TextDirection.rtl,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected ? CheckoutView._brand : Colors.transparent,
+                  border: Border.all(
+                    color: selected ? CheckoutView._brand : brandStroke,
+                    width: 1.4,
+                  ),
+                ),
+                child: selected
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 15,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      opt.label,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: textDark,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      opt.groupValue == 0
+                          ? 'دفع مباشر عند الاستلام'
+                          : 'دفع إلكتروني آمن',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(color: textMuted, fontSize: 12.5),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: selected ? brandSoft : const Color(0xFFF8F8F8),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: Image.asset(
+                      opt.asset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) =>
+                          Icon(opt.fallback, color: CheckoutView._brand),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 10),
-        const Text('0', maxLines: 1, overflow: TextOverflow.ellipsis),
-        const SizedBox(width: 6),
-      ],
+      ),
     );
   }
 }

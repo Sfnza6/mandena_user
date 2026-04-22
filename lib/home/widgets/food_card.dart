@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mandena/home/widgets/hero_tags.dart';
 import '../../data/models/item.dart';
 import 'home_ui.dart';
 
@@ -11,6 +12,7 @@ class FoodCard extends StatelessWidget {
     required this.isFavorite,
     this.onToggleFavorite,
     this.onAddToCart,
+    this.heroTag,
   });
 
   final ItemModel item;
@@ -19,19 +21,30 @@ class FoodCard extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback? onToggleFavorite;
   final VoidCallback? onAddToCart;
+  final String? heroTag;
 
   @override
   Widget build(BuildContext context) {
     final unavailable = !item.isActive || isSoldOut;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final textMain = theme.textTheme.bodyLarge?.color ?? HomeUi.kTextMain;
+    final textSub =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? HomeUi.kTextSub;
+    final borderColor = isDark ? Colors.white10 : HomeUi.kBorder;
+    final imageFallback = isDark
+        ? const Color(0xFF1F2937)
+        : const Color(0xFFF2EEE8);
 
     return Opacity(
       opacity: unavailable ? .72 : 1,
       child: Container(
         width: 176,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: HomeUi.kBorder),
+          border: Border.all(color: borderColor),
           boxShadow: const [
             BoxShadow(
               color: HomeUi.kSoftShadow,
@@ -48,16 +61,22 @@ class FoodCard extends StatelessWidget {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: Image.network(
-                      item.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFFF2EEE8),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.fastfood_rounded,
-                          color: HomeUi.kPrimary,
-                          size: 32,
+                    child: Hero(
+                      tag:
+                          heroTag ??
+                          itemHeroTagFromModel(item, scope: 'food-card'),
+                      transitionOnUserGestures: true,
+                      child: Image.network(
+                        item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: imageFallback,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.fastfood_rounded,
+                            color: HomeUi.kPrimary,
+                            size: 32,
+                          ),
                         ),
                       ),
                     ),
@@ -99,8 +118,8 @@ class FoodCard extends StatelessWidget {
                       ),
                       child: Text(
                         'د.ل ${item.price.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: cardColor,
                           fontWeight: FontWeight.w800,
                           fontSize: 11.5,
                         ),
@@ -121,10 +140,10 @@ class FoodCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.right,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
-                        color: HomeUi.kTextMain,
+                        color: textMain,
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -136,9 +155,9 @@ class FoodCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.2,
-                          color: HomeUi.kTextSub,
+                          color: textSub,
                           height: 1.35,
                         ),
                       ),
@@ -157,9 +176,9 @@ class FoodCard extends StatelessWidget {
                                 color: HomeUi.kPrimary,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.add,
-                                color: Colors.white,
+                                color: cardColor,
                                 size: 18,
                               ),
                             ),
@@ -167,7 +186,7 @@ class FoodCard extends StatelessWidget {
                         const Spacer(),
                         if (isSoldOut)
                           const Text(
-                            'نفدت الكمية',
+                            'غير متوفر',
                             style: TextStyle(
                               fontSize: 11.5,
                               color: Color(0xFFDC2626),
@@ -177,18 +196,18 @@ class FoodCard extends StatelessWidget {
                         else if (remaining != null)
                           Text(
                             'المتبقي $remaining',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11.5,
-                              color: HomeUi.kTextSub,
+                              color: textSub,
                               fontWeight: FontWeight.w700,
                             ),
                           )
                         else
-                          const Text(
-                            'متوفر الآن',
+                          Text(
+                            unavailable ? 'غير متوفر' : 'متوفر الآن',
                             style: TextStyle(
                               fontSize: 11.5,
-                              color: HomeUi.kTextSub,
+                              color: textSub,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

@@ -21,6 +21,17 @@ class CartController extends GetxController {
 
   double get total => subtotal.value + delivery.value + services.value;
 
+  int get itemsCount {
+    try {
+      return cart.fold<int>(
+        0,
+        (sum, item) => sum + _toInt(item['quantity'], 0),
+      );
+    } catch (_) {
+      return 0;
+    }
+  }
+
   int? _userId;
 
   final selectedAddress = Rxn<Address>();
@@ -45,11 +56,19 @@ class CartController extends GetxController {
     _lastSnackAt = now;
 
     Get.rawSnackbar(
-      borderRadius: 14,
+      snackPosition: SnackPosition.TOP,
+      borderRadius: 16,
       snackStyle: SnackStyle.FLOATING,
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       backgroundColor: bg,
+      boxShadows: const [
+        BoxShadow(
+          color: Color(0x22000000),
+          blurRadius: 16,
+          offset: Offset(0, 8),
+        ),
+      ],
       messageText: Directionality(
         textDirection: TextDirection.rtl,
         child: Column(
@@ -248,6 +267,14 @@ class CartController extends GetxController {
     update();
   }
 
+  Future<bool> _ensureBoundToSession() async {
+    final currentUserId = await Session.userId();
+    if (currentUserId != _userId) {
+      await bindToCurrentUser();
+    }
+    return _userId != null && _userId! > 0;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -313,7 +340,7 @@ class CartController extends GetxController {
   }
 
   Future<void> load() async {
-    if (_userId == null) return;
+    if (!await _ensureBoundToSession()) return;
 
     isBusy.value = true;
     try {
@@ -405,7 +432,7 @@ class CartController extends GetxController {
   }
 
   Future<void> add(int itemId, {int qty = 1}) async {
-    if (_userId == null) return;
+    if (!await _ensureBoundToSession()) return;
     try {
       final res = await _api.post(
         'add_to_cart.php',
@@ -428,7 +455,7 @@ class CartController extends GetxController {
   }
 
   Future<void> setQty(int itemId, int qty) async {
-    if (_userId == null) return;
+    if (!await _ensureBoundToSession()) return;
     try {
       final row = cart.firstWhereOrNull((e) => _toInt(e['item_id']) == itemId);
       final cartItemId = _toInt(row?['cart_item_id']);

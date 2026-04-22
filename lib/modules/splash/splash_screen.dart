@@ -94,7 +94,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(60),
                     child: Image.asset(
-                      'assets/images/logo.png',
+                      'assets/images/Logo.png',
                       width: 120,
                       height: 120,
                       color: brand,

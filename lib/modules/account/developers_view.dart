@@ -29,8 +29,7 @@ class DevelopersViewPage extends StatelessWidget {
         backgroundColor: bgColor,
         appBar: AppBar(
           elevation: 0,
-          backgroundColor:
-              theme.appBarTheme.backgroundColor ?? bgColor,
+          backgroundColor: theme.appBarTheme.backgroundColor ?? bgColor,
           centerTitle: true,
           title: Text(
             'مطوّرو البرنامج',
@@ -65,7 +64,7 @@ class DevelopersViewPage extends StatelessWidget {
                 ],
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
                     width: 56,
@@ -75,13 +74,15 @@ class DevelopersViewPage extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child:
-                        const Icon(Icons.auto_awesome_rounded, color: _brown),
+                    child: const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: _brown,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           'Brainware',
@@ -177,10 +178,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 6, 4, 10),
       child: Text(
         text,
-        style: TextStyle(
-          color: muted,
-          fontWeight: FontWeight.w900,
-        ),
+        style: TextStyle(color: muted, fontWeight: FontWeight.w900),
       ),
     );
   }
@@ -239,7 +237,7 @@ class _DevCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     name,
@@ -252,15 +250,15 @@ class _DevCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    role,
-                    style: const TextStyle(color: _textMute),
-                  ),
+                  Text(role, style: const TextStyle(color: _textMute)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.phone_rounded,
-                          size: 18, color: Colors.black54),
+                      const Icon(
+                        Icons.phone_rounded,
+                        size: 18,
+                        color: Colors.black54,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         phone,

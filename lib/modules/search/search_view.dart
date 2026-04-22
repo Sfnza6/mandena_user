@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mandena/home/widgets/hero_tags.dart';
 
 import 'search_controller.dart';
 import '../../app_routes.dart';
@@ -27,10 +28,7 @@ class _SearchViewState extends State<SearchView> {
   @override
   void initState() {
     super.initState();
-    c = Get.put<SearchControllerX>(
-      SearchControllerX(),
-      permanent: true,
-    );
+    c = Get.put<SearchControllerX>(SearchControllerX(), permanent: true);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       c.refreshHistory();
@@ -118,16 +116,15 @@ class _SearchViewState extends State<SearchView> {
                 ),
 
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 4,
+                  ),
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(
                       'ابدأ بكتابة اسم الصنف أو جزء منه لعرض النتائج فوراً ✨',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: textSubColor,
-                      ),
+                      style: TextStyle(fontSize: 12, color: textSubColor),
                     ),
                   ),
                 ),
@@ -165,10 +162,7 @@ class _SearchViewState extends State<SearchView> {
                     controller: c.input,
                     textDirection: TextDirection.rtl,
                     cursorColor: kPrimary,
-                    style: TextStyle(
-                      color: textMainColor,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: textMainColor, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'ابحث عن صنف، وجبة أو عرض...',
                       hintStyle: TextStyle(
@@ -192,7 +186,9 @@ class _SearchViewState extends State<SearchView> {
                             )
                           : Container(
                               margin: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 8),
+                                horizontal: 8,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
                                 color: kPrimarySoft,
                                 borderRadius: BorderRadius.circular(14),
@@ -267,11 +263,7 @@ class _SearchViewState extends State<SearchView> {
           if (c.history.isNotEmpty) ...[
             Row(
               children: [
-                const Icon(
-                  Icons.history_rounded,
-                  size: 18,
-                  color: kPrimary,
-                ),
+                const Icon(Icons.history_rounded, size: 18, color: kPrimary),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -333,10 +325,15 @@ class _SearchViewState extends State<SearchView> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: () async {
+                        final heroTag = itemHeroTagFromModel(
+                          it,
+                          scope: 'search-history',
+                          extra: i,
+                        );
                         await c.searchFromHistory(it);
                         await Get.toNamed(
                           AppRoutes.itemDetail,
-                          arguments: it.toJson(),
+                          arguments: withItemHeroArg(it.toJson(), heroTag),
                         );
                         c.reset();
                       },
@@ -360,18 +357,26 @@ class _SearchViewState extends State<SearchView> {
                           ),
                           leading: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              it.imageUrl,
-                              width: 52,
-                              height: 52,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+                            child: Hero(
+                              tag: itemHeroTagFromModel(
+                                it,
+                                scope: 'search-history',
+                                extra: i,
+                              ),
+                              transitionOnUserGestures: true,
+                              child: Image.network(
+                                it.imageUrl,
                                 width: 52,
                                 height: 52,
-                                color: kBg,
-                                child: Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: textSubColor,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 52,
+                                  height: 52,
+                                  color: kBg,
+                                  child: Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: textSubColor,
+                                  ),
                                 ),
                               ),
                             ),
@@ -389,10 +394,7 @@ class _SearchViewState extends State<SearchView> {
                             it.description,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: textSubColor,
-                            ),
+                            style: TextStyle(fontSize: 12, color: textSubColor),
                           ),
                           trailing: const Icon(
                             Icons.arrow_forward_ios_rounded,
@@ -423,10 +425,7 @@ class _SearchViewState extends State<SearchView> {
                       tween: Tween(begin: 0.9, end: 1),
                       curve: Curves.easeOutBack,
                       builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: value,
-                          child: child,
-                        );
+                        return Transform.scale(scale: value, child: child);
                       },
                       child: Container(
                         width: 80,
@@ -452,10 +451,7 @@ class _SearchViewState extends State<SearchView> {
                     const SizedBox(height: 16),
                     const Text(
                       'ابدأ بالكتابة للبحث عن الأصناف.',
-                      style: TextStyle(
-                        color: kPrimary,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: kPrimary, fontSize: 13),
                     ),
                   ],
                 ),
@@ -494,10 +490,7 @@ class _SearchViewState extends State<SearchView> {
                             'هذه النتائج معروضة من الكاش (بدون طلب جديد).',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: textSubColor,
-                            ),
+                            style: TextStyle(fontSize: 11, color: textSubColor),
                           ),
                         ),
                       ],
@@ -516,10 +509,15 @@ class _SearchViewState extends State<SearchView> {
                 final tile = InkWell(
                   borderRadius: BorderRadius.circular(16),
                   onTap: () async {
+                    final heroTag = itemHeroTagFromModel(
+                      it,
+                      scope: 'search-results',
+                      extra: i,
+                    );
                     await c.saveItemToHistory(it);
                     await Get.toNamed(
                       AppRoutes.itemDetail,
-                      arguments: it.toJson(),
+                      arguments: withItemHeroArg(it.toJson(), heroTag),
                     );
                     c.reset();
                   },
@@ -543,18 +541,26 @@ class _SearchViewState extends State<SearchView> {
                       ),
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          it.imageUrl,
-                          width: 52,
-                          height: 52,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                        child: Hero(
+                          tag: itemHeroTagFromModel(
+                            it,
+                            scope: 'search-results',
+                            extra: i,
+                          ),
+                          transitionOnUserGestures: true,
+                          child: Image.network(
+                            it.imageUrl,
                             width: 52,
                             height: 52,
-                            color: kBg,
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              color: textSubColor,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 52,
+                              height: 52,
+                              color: kBg,
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                color: textSubColor,
+                              ),
                             ),
                           ),
                         ),
@@ -572,10 +578,7 @@ class _SearchViewState extends State<SearchView> {
                         it.description,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: textSubColor,
-                        ),
+                        style: TextStyle(fontSize: 12, color: textSubColor),
                       ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

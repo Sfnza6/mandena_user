@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mandena/modules/categories/categories_view.dart';
+import 'package:mandena/modules/orders/my_orders_page.dart';
 
 import '../../home/home_controller.dart';
 import '../../home/home_view.dart';
 import '../account/account_view.dart';
+import '../cart/cart_controller.dart';
 import '../cart/cart_view.dart';
 import '../favorites/favorites_view.dart';
 import 'root_controller.dart';
@@ -12,22 +14,32 @@ import 'root_controller.dart';
 class RootView extends StatelessWidget {
   const RootView({super.key});
 
-  static const Color kPageBg = Color(0xFFF4F4F6);
   static const Color kNavBg = Color(0xFFFFFBF8);
   static const Color kPrimary = Color(0xFFFF6A00);
-  static const Color kPrimaryDeep = Color(0xFFFF4D00);
-  static const Color kPrimarySoft = Color(0xFFFF8A3D);
-  static const Color kInactive = Color(0xFFB56A2A);
   static const Color kBorder = Color(0xFFFFE1CC);
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final pageBg = theme.scaffoldBackgroundColor;
+    final navBg = isDark ? theme.cardColor : kNavBg;
+    final borderColor = isDark ? Colors.white10 : kBorder;
+    final navTextColor =
+        theme.textTheme.bodyMedium?.color ??
+        (isDark ? Colors.white : Colors.black87);
+
     final rc = Get.put(RootController(), permanent: true);
     Get.lazyPut<HomeController>(() => HomeController(), fenix: true);
+
+    final cart = Get.isRegistered<CartController>()
+        ? Get.find<CartController>()
+        : Get.put(CartController(), permanent: true);
 
     final tabs = [
       const HomeView(),
       const CategoriesView(),
+      const MyOrdersPage(),
       const CartView(),
       const FavoritesScreen(),
       const AccountView(),
@@ -37,24 +49,24 @@ class RootView extends StatelessWidget {
       textDirection: TextDirection.rtl,
       child: Obx(
         () => Scaffold(
-          backgroundColor: kPageBg,
+          backgroundColor: pageBg,
           body: IndexedStack(index: rc.index.value, children: tabs),
           bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: kNavBg,
-              border: Border(top: BorderSide(color: kBorder, width: 1.15)),
+            decoration: BoxDecoration(
+              color: navBg,
+              border: Border(top: BorderSide(color: borderColor, width: 1.15)),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0x12000000),
+                  color: Colors.black.withOpacity(isDark ? .18 : .07),
                   blurRadius: 22,
-                  offset: Offset(0, -6),
+                  offset: const Offset(0, -6),
                 ),
               ],
             ),
             child: SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 7, 12, 10),
+                padding: const EdgeInsets.fromLTRB(10, 7, 10, 10),
                 child: Row(
                   children: [
                     _NavItem(
@@ -62,30 +74,51 @@ class RootView extends StatelessWidget {
                       label: 'الرئيسية',
                       index: 0,
                       controller: rc,
+                      textColor: navTextColor,
+                      navBg: navBg,
                     ),
                     _NavItem(
                       icon: Icons.grid_view_rounded,
                       label: 'الأقسام',
                       index: 1,
                       controller: rc,
+                      textColor: navTextColor,
+                      navBg: navBg,
                     ),
                     _NavItem(
-                      icon: Icons.shopping_cart_outlined,
-                      label: 'السلة',
+                      icon: Icons.receipt_long_rounded,
+                      label: 'طلباتي',
                       index: 2,
                       controller: rc,
+                      textColor: navTextColor,
+                      navBg: navBg,
+                    ),
+                    Obx(
+                      () => _NavItem(
+                        icon: Icons.shopping_cart_outlined,
+                        label: 'السلة',
+                        index: 3,
+                        controller: rc,
+                        badgeCount: cart.itemsCount,
+                        textColor: navTextColor,
+                        navBg: navBg,
+                      ),
                     ),
                     _NavItem(
-                      icon: Icons.star_border_outlined,
+                      icon: Icons.star_border_rounded,
                       label: 'المفضلة',
-                      index: 3,
+                      index: 4,
                       controller: rc,
+                      textColor: navTextColor,
+                      navBg: navBg,
                     ),
                     _NavItem(
                       icon: Icons.person_outline_rounded,
                       label: 'حسابي',
-                      index: 4,
+                      index: 5,
                       controller: rc,
+                      textColor: navTextColor,
+                      navBg: navBg,
                     ),
                   ],
                 ),
@@ -104,12 +137,18 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.index,
     required this.controller,
+    required this.textColor,
+    required this.navBg,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
   final int index;
   final RootController controller;
+  final Color textColor;
+  final Color navBg;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -134,25 +173,49 @@ class _NavItem extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(99),
-                    gradient: selected
-                        ? const LinearGradient(
-                            colors: [RootView.kPrimary, RootView.kPrimarySoft],
-                          )
-                        : null,
-                    color: selected ? null : Colors.transparent,
+                    color: selected ? RootView.kPrimary : Colors.transparent,
                   ),
                 ),
-                ShaderMask(
-                  shaderCallback: (Rect bounds) {
-                    return LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: selected
-                          ? const [RootView.kPrimarySoft, RootView.kPrimaryDeep]
-                          : const [RootView.kInactive, RootView.kInactive],
-                    ).createShader(bounds);
-                  },
-                  child: Icon(icon, size: 23, color: Colors.white),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 23,
+                      color: selected
+                          ? RootView.kPrimary
+                          : textColor.withOpacity(.82),
+                    ),
+                    if (badgeCount > 0)
+                      Positioned(
+                        top: -8,
+                        left: -10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          decoration: BoxDecoration(
+                            color: RootView.kPrimary,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: navBg, width: 1.5),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            badgeCount > 99 ? '99+' : '$badgeCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -163,7 +226,9 @@ class _NavItem extends StatelessWidget {
                     fontSize: 11,
                     height: 1.1,
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
-                    color: selected ? RootView.kPrimary : RootView.kInactive,
+                    color: selected
+                        ? RootView.kPrimary
+                        : textColor.withOpacity(.90),
                   ),
                 ),
               ],

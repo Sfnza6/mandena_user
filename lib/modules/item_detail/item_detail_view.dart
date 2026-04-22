@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mandena/home/widgets/hero_tags.dart';
 
 import 'item_detail_controller.dart';
 
@@ -16,13 +17,30 @@ class ItemDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.put(ItemDetailController());
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final pageBg = theme.scaffoldBackgroundColor;
+    final cardColor = theme.cardColor;
+    final textColor = theme.textTheme.bodyLarge?.color ?? kText;
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? kMuted;
+    final borderColor = isDark ? Colors.white10 : kBorder;
+    final imageFallback = isDark
+        ? const Color(0xFF1F2937)
+        : const Color(0xFFF2EEE8);
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: kPageBg,
+        backgroundColor: pageBg,
         body: Obx(() {
           final item = c.item;
+          final args = Get.arguments;
+          final heroTag =
+              args is Map &&
+                  (args['_heroTag']?.toString().trim().isNotEmpty == true)
+              ? args['_heroTag'].toString()
+              : itemHeroTagFromModel(item, scope: 'item-detail');
           final fav = c.isFavorite.value;
           final avg = c.avgRating.value <= 0 ? item.rating : c.avgRating.value;
 
@@ -37,16 +55,20 @@ class ItemDetailView extends StatelessWidget {
                         SizedBox(
                           height: 330,
                           width: double.infinity,
-                          child: Image.network(
-                            item.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFFF2EEE8),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.fastfood_rounded,
-                                color: kPrimary,
-                                size: 56,
+                          child: Hero(
+                            tag: heroTag,
+                            transitionOnUserGestures: true,
+                            child: Image.network(
+                              item.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: imageFallback,
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.fastfood_rounded,
+                                  color: kPrimary,
+                                  size: 56,
+                                ),
                               ),
                             ),
                           ),
@@ -67,7 +89,7 @@ class ItemDetailView extends StatelessWidget {
                           right: 18,
                           child: _CircleBtn(
                             icon: Icons.arrow_back_rounded,
-                            color: kText,
+                            color: textColor,
                             onTap: Get.back,
                           ),
                         ),
@@ -78,8 +100,8 @@ class ItemDetailView extends StatelessWidget {
                     child: Transform.translate(
                       offset: const Offset(0, -8),
                       child: Container(
-                        decoration: const BoxDecoration(
-                          color: kPageBg,
+                        decoration: BoxDecoration(
+                          color: pageBg,
                           borderRadius: BorderRadius.vertical(
                             top: Radius.circular(28),
                           ),
@@ -93,32 +115,6 @@ class ItemDetailView extends StatelessWidget {
                               textDirection: TextDirection.rtl,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        item.name,
-                                        textAlign: TextAlign.right,
-                                        style: const TextStyle(
-                                          color: kText,
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      const Text(
-                                        'تفاصيل الصنف',
-                                        textAlign: TextAlign.right,
-                                        style: TextStyle(
-                                          color: kMuted,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
                                 Padding(
                                   padding: const EdgeInsets.only(top: 3),
                                   child: Text(
@@ -130,6 +126,35 @@ class ItemDetailView extends StatelessWidget {
                                     ),
                                   ),
                                 ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        item.name,
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        item.description.isNotEmpty
+                                            ? item.description
+                                            : 'وصف غير متوفر حالياً',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 14,
+                                          height: 1.8,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 14),
@@ -138,7 +163,7 @@ class ItemDetailView extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Text(
-                                  '(${c.comments.length} تقييم)',
+                                  '(${c.ratingsCount.value})',
                                   style: const TextStyle(
                                     color: kMuted,
                                     fontSize: 12.5,
@@ -159,9 +184,9 @@ class ItemDetailView extends StatelessWidget {
                                     children: [
                                       Text(
                                         avg.toStringAsFixed(1),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w800,
-                                          color: kText,
+                                          color: textColor,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -176,26 +201,14 @@ class ItemDetailView extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              item.description.isNotEmpty
-                                  ? item.description
-                                  : 'وصف غير متوفر حالياً',
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                color: kMuted,
-                                fontSize: 14,
-                                height: 1.8,
-                              ),
-                            ),
                             const SizedBox(height: 18),
-                            const Align(
+                            Align(
                               alignment: Alignment.centerRight,
                               child: Text(
                                 'الإضافات',
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
-                                  color: kText,
+                                  color: textColor,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
                                 ),
@@ -231,13 +244,54 @@ class ItemDetailView extends StatelessWidget {
                               );
                             }),
                             const SizedBox(height: 18),
-                            const Align(
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'المحذوفات',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Obx(() {
+                              final list = c.removals;
+                              if (list.isEmpty) {
+                                return const SizedBox(
+                                  width: double.infinity,
+                                  child: Text(
+                                    'لا توجد مكونات قابلة للحذف لهذا الصنف',
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(color: kMuted),
+                                  ),
+                                );
+                              }
+                              return Wrap(
+                                textDirection: TextDirection.rtl,
+                                spacing: 10,
+                                runSpacing: 10,
+                                alignment: WrapAlignment.end,
+                                children: List.generate(list.length, (i) {
+                                  final a = list[i];
+                                  return _RemovalChip(
+                                    title: a.name,
+                                    selected: a.selected,
+                                    onTap: () => c.toggleRemoval(i),
+                                  );
+                                }),
+                              );
+                            }),
+                            const SizedBox(height: 18),
+                            Align(
                               alignment: Alignment.centerRight,
                               child: Text(
                                 'الكمية',
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
-                                  color: kText,
+                                  color: textColor,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
                                 ),
@@ -259,8 +313,8 @@ class ItemDetailView extends StatelessWidget {
                                     ),
                                     child: Text(
                                       '${c.qty.value}',
-                                      style: const TextStyle(
-                                        color: kText,
+                                      style: TextStyle(
+                                        color: textColor,
                                         fontWeight: FontWeight.w900,
                                         fontSize: 18,
                                       ),
@@ -275,13 +329,142 @@ class ItemDetailView extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            const Align(
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'قيّم الصنف',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Obx(
+                              () => Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: List.generate(5, (index) {
+                                  final star = index + 1;
+                                  final active = c.selectedStars.value >= star;
+                                  return IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 34,
+                                    ),
+                                    onPressed: () =>
+                                        c.selectedStars.value = star,
+                                    icon: Icon(
+                                      active
+                                          ? Icons.star_rounded
+                                          : Icons.star_border_rounded,
+                                      color: kStar,
+                                      size: 28,
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: Obx(
+                                () => ElevatedButton(
+                                  onPressed: c.ratingBusy.value
+                                      ? null
+                                      : c.submitRating,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: kPrimary,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    c.ratingBusy.value
+                                        ? 'جارٍ حفظ التقييم...'
+                                        : 'إرسال التقييم',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: cardColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'أضف تعليقك',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              controller: c.commentTextCtrl,
+                              maxLines: 3,
+                              textAlign: TextAlign.right,
+                              decoration: InputDecoration(
+                                hintText: 'اكتب تعليقك هنا...',
+                                hintTextDirection: TextDirection.rtl,
+                                filled: true,
+                                fillColor: cardColor,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: borderColor),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: borderColor),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(color: kPrimary),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: Obx(
+                                () => OutlinedButton(
+                                  onPressed: c.commentBusy.value
+                                      ? null
+                                      : c.submitComment,
+                                  style: OutlinedButton.styleFrom(
+                                    backgroundColor: kPrimary,
+                                    foregroundColor: kPrimary,
+                                    side: const BorderSide(color: kPrimary),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    c.commentBusy.value
+                                        ? 'جارٍ إرسال التعليق...'
+                                        : 'إرسال التعليق',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: cardColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Align(
                               alignment: Alignment.centerRight,
                               child: Text(
                                 'التعليقات',
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
-                                  color: kText,
+                                  color: textColor,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
                                 ),
@@ -313,7 +496,7 @@ class ItemDetailView extends StatelessWidget {
                                     margin: const EdgeInsets.only(bottom: 10),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: cardColor,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(color: kBorder),
                                     ),
@@ -324,8 +507,8 @@ class ItemDetailView extends StatelessWidget {
                                         Text(
                                           cm.userName,
                                           textAlign: TextAlign.right,
-                                          style: const TextStyle(
-                                            color: kText,
+                                          style: TextStyle(
+                                            color: textColor,
                                             fontWeight: FontWeight.w800,
                                           ),
                                         ),
@@ -362,9 +545,9 @@ class ItemDetailView extends StatelessWidget {
                     18,
                     MediaQuery.of(context).padding.bottom + 10,
                   ),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(24),
                     ),
                   ),
@@ -386,23 +569,33 @@ class ItemDetailView extends StatelessWidget {
                       Expanded(
                         child: Obx(
                           () => ElevatedButton(
-                            onPressed: c.isAdding.value
+                            onPressed:
+                                (c.isAdding.value ||
+                                    c.item.outOfStock ||
+                                    !c.item.isActive)
                                 ? null
                                 : () async => c.addToCart(),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: kPrimary,
+                              backgroundColor:
+                                  (c.item.outOfStock || !c.item.isActive)
+                                  ? const Color(0xFFB8BDC7)
+                                  : kPrimary,
+                              disabledBackgroundColor: const Color(0xFFB8BDC7),
                               minimumSize: const Size.fromHeight(54),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(18),
                               ),
                             ),
                             child: Text(
-                              c.isAdding.value
-                                  ? 'جارٍ الإضافة...'
-                                  : 'أضف إلى السلة',
+                              (c.item.outOfStock || !c.item.isActive)
+                                  ? 'غير متاح'
+                                  : (c.isAdding.value
+                                        ? 'جارٍ الإضافة...'
+                                        : 'أضف إلى السلة'),
                               style: const TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 16,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -433,8 +626,9 @@ class _CircleBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardColor = Theme.of(context).cardColor;
     return Material(
-      color: Colors.white.withOpacity(.95),
+      color: cardColor.withOpacity(.95),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -460,6 +654,17 @@ class _AddonChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = Theme.of(context).cardColor;
+    final textColor =
+        Theme.of(context).textTheme.bodyLarge?.color ?? ItemDetailView.kText;
+    final bg = selected
+        ? (isDark ? const Color(0xFF2A1D14) : const Color(0xFFFFF3EC))
+        : cardColor;
+    final border = selected
+        ? ItemDetailView.kPrimary
+        : (isDark ? Colors.white10 : ItemDetailView.kBorder);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -467,11 +672,9 @@ class _AddonChip extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: 120),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFFF3EC) : Colors.white,
+          color: bg,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? ItemDetailView.kPrimary : ItemDetailView.kBorder,
-          ),
+          border: Border.all(color: border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -479,10 +682,7 @@ class _AddonChip extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: ItemDetailView.kText,
-                fontWeight: FontWeight.w800,
-              ),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
             Text(
@@ -495,6 +695,54 @@ class _AddonChip extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RemovalChip extends StatelessWidget {
+  const _RemovalChip({
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = Theme.of(context).cardColor;
+    final textColor =
+        Theme.of(context).textTheme.bodyLarge?.color ?? ItemDetailView.kText;
+    final bg = selected
+        ? (isDark ? const Color(0xFF2A1D14) : const Color(0xFFFFF3EC))
+        : cardColor;
+    final border = selected
+        ? ItemDetailView.kPrimary
+        : (isDark ? Colors.white10 : ItemDetailView.kBorder);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 120),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: border),
+        ),
+        child: Text(
+          title,
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            color: selected ? ItemDetailView.kPrimary : textColor,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
     );
@@ -514,6 +762,9 @@ class _QtyCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor =
+        Theme.of(context).textTheme.bodyLarge?.color ?? ItemDetailView.kText;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -521,10 +772,12 @@ class _QtyCircle extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: filled ? ItemDetailView.kPrimary : const Color(0xFFF3F4F6),
+          color: filled
+              ? ItemDetailView.kPrimary
+              : (isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6)),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Icon(icon, color: filled ? Colors.white : ItemDetailView.kText),
+        child: Icon(icon, color: filled ? Colors.white : textColor),
       ),
     );
   }

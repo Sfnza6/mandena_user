@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../home_controller.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/hero_tags.dart';
 import '../widgets/top_rated_tile.dart';
 import '../../../data/models/item.dart';
 import '../../app_routes.dart';
@@ -25,7 +26,7 @@ class HomeTopRatedSection extends StatelessWidget {
     return rem < 0 ? 0 : rem;
   }
 
-  void _openItemDetail(ItemModel item) {
+  void _openItemDetail(ItemModel item, String heroTag) {
     if (!item.isActive) {
       Get.snackbar(
         'غير متوفر',
@@ -44,7 +45,10 @@ class HomeTopRatedSection extends StatelessWidget {
       return;
     }
 
-    Get.toNamed(AppRoutes.itemDetail, arguments: item.toJson());
+    Get.toNamed(
+      AppRoutes.itemDetail,
+      arguments: withItemHeroArg(item.toJson(), heroTag),
+    );
   }
 
   @override
@@ -79,12 +83,19 @@ class HomeTopRatedSection extends StatelessWidget {
           }
 
           return Column(
-            children: c.topRated.map((item) {
+            children: c.topRated.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
               final soldOut = _isSoldOut(item);
               final remain = _remaining(item);
+              final heroTag = itemHeroTagFromModel(
+                item,
+                scope: 'home-top-rated',
+                extra: index,
+              );
 
               return PressableScale(
-                onTap: () => _openItemDetail(item),
+                onTap: () => _openItemDetail(item, heroTag),
                 child: Obx(
                   () => TopRatedTile(
                     item: item,
@@ -95,6 +106,7 @@ class HomeTopRatedSection extends StatelessWidget {
                     onAddToCart: (!soldOut && item.isActive)
                         ? () => c.addItemToCart(item)
                         : null,
+                    heroTag: heroTag,
                   ),
                 ),
               );

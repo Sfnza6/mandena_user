@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // ✅ لقفل الاتجاه
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mandena/core/shared_preferences.dart';
@@ -8,8 +8,6 @@ import 'package:mandena/home/pages/items_page.dart';
 import 'package:mandena/home/pages/offers_page.dart';
 import 'package:mandena/modules/account/account_banned_view.dart';
 import 'package:mandena/modules/branch/branch_controller.dart';
-
-// ignore: unused_import
 import 'package:mandena/modules/cart/cart_controller.dart';
 import 'package:mandena/modules/categories/categories_view.dart';
 import 'package:mandena/modules/connection/network_controller.dart';
@@ -45,9 +43,8 @@ import 'modules/account/account_controller.dart';
 
 import 'modules/addresses/map_pick_view.dart';
 import 'modules/account/developers_view.dart';
-import 'core/theme_service.dart'; // ✅ خدمة الثيم (الوضع الليلي)
+import 'core/theme_service.dart';
 
-/// 🔥 تفعيل لوجيك طباعة الأخطاء
 void setupErrorHandling() {
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
@@ -66,45 +63,66 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   setupErrorHandling();
 
-  // ✅ قفل التطبيق على الوضع العمودي فقط
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // 👇👇👇 تهيئة الكاش
   await GetStorage.init();
 
   final branchController = Get.put(BranchController(), permanent: true);
   await branchController.initBranching();
 
-  // ✅ تهيئة الجلسة
   await Session.init();
   Get.put(ConnectionController(), permanent: true);
   await PrefsService.init();
 
-  // ✅ تهيئة الإشعارات (Firebase + FCM + Local Notifications)
   await NotificationService.init();
 
-  runApp(const mandenaApp());
+  runApp(const MandenaApp());
 }
 
-class mandenaApp extends StatelessWidget {
-  const mandenaApp({super.key});
+class MandenaApp extends StatelessWidget {
+  const MandenaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 🎨 خلفية كريمية موحدة (تحل مشكلة الشاشة السوداء في الثيم الفاتح)
     const cream = Color(0xFFF6F5F3);
 
     final baseLight = AppTheme.light;
     final baseDark = AppTheme.dark;
 
-    // 🎨 ثيم فاتح مع الخلفية الكريمية + انتقالات iOS
     final lightTheme = baseLight.copyWith(
+      brightness: Brightness.light,
       scaffoldBackgroundColor: cream,
       canvasColor: cream,
-      colorScheme: baseLight.colorScheme.copyWith(surface: Colors.white),
+      cardColor: Colors.white,
+      colorScheme: baseLight.colorScheme.copyWith(
+        brightness: Brightness.light,
+        surface: Colors.white,
+        primary: const Color(0xFFFF5A00),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFFFF5A00);
+          }
+          return null;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFFFF5A00).withOpacity(.35);
+          }
+          return null;
+        }),
+      ),
+      dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: CupertinoPageTransitionsBuilder(),
@@ -114,11 +132,39 @@ class mandenaApp extends StatelessWidget {
           TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
         },
       ),
-      dialogTheme: DialogThemeData(backgroundColor: cream),
     );
 
-    // 🌙 ثيم ليلي مع نفس انتقالات iOS (الأيقونات لونها 0xFF6F3F17 داخل AppTheme.dark)
     final darkTheme = baseDark.copyWith(
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF0B1220),
+      canvasColor: const Color(0xFF0B1220),
+      cardColor: const Color(0xFF111827),
+      colorScheme: baseDark.colorScheme.copyWith(
+        brightness: Brightness.dark,
+        primary: const Color(0xFFFF5A00),
+        surface: const Color(0xFF111827),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF0B1220),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFFFF5A00);
+          }
+          return null;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFFFF5A00).withOpacity(.35);
+          }
+          return null;
+        }),
+      ),
+      dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF111827)),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: CupertinoPageTransitionsBuilder(),
@@ -133,8 +179,10 @@ class mandenaApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ماندينا',
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: ThemeService().theme,
 
-      // ✅ نحصر تكبير/تصغير الخط في مدى آمن لكل التطبيق
       builder: (context, child) {
         final mq = MediaQuery.of(context);
         final safeTextScale = mq.textScaleFactor.clamp(0.9, 1.1);
@@ -148,22 +196,16 @@ class mandenaApp extends StatelessWidget {
         );
       },
 
-      // 🎨 ربط الثيمات مع خدمة الوضع الليلي
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: ThemeService().theme,
-
       locale: const Locale('ar', 'LY'),
       fallbackLocale: const Locale('ar', 'LY'),
 
       initialRoute: AppRoutes.splash,
 
-      /// 🎞️ جعل GetX يستخدم ترانزشن iOS افتراضيًا
       defaultTransition: Transition.cupertino,
       transitionDuration: const Duration(milliseconds: 260),
       opaqueRoute: false,
-      popGesture: true, // سحب من الحافة للرجوع (لو مدعوم)
-      // Inject Controllers
+      popGesture: true,
+
       initialBinding: BindingsBuilder(() {
         Get.lazyPut<CartController>(() => CartController(), fenix: true);
         Get.lazyPut<FavoritesController>(
@@ -337,7 +379,6 @@ class mandenaApp extends StatelessWidget {
           opaque: false,
         ),
         GetPage(name: AppRoutes.homeOffers, page: () => OffersPage()),
-
         GetPage(
           name: AppRoutes.homeCategories,
           page: () => const CategoriesView(),

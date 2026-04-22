@@ -4,6 +4,7 @@ import 'package:mandena/app_routes.dart';
 
 import '../home_controller.dart';
 import '../widgets/food_card.dart';
+import '../widgets/hero_tags.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/section_title.dart';
 import '../widgets/skeletons.dart';
@@ -27,7 +28,7 @@ class HomeItemsSection extends StatelessWidget {
     return rem < 0 ? 0 : rem;
   }
 
-  void _openItemDetail(ItemModel item) {
+  void _openItemDetail(ItemModel item, String heroTag) {
     if (!item.isActive) {
       Get.snackbar('غير متوفر', 'هذا الصنف غير متوفر حالياً');
       return;
@@ -36,7 +37,10 @@ class HomeItemsSection extends StatelessWidget {
       Get.snackbar('نفدت الكمية', 'تم استهلاك الحدّ اليومي لهذا الصنف');
       return;
     }
-    Get.toNamed(AppRoutes.itemDetail, arguments: item.toJson());
+    Get.toNamed(
+      AppRoutes.itemDetail,
+      arguments: withItemHeroArg(item.toJson(), heroTag),
+    );
   }
 
   @override
@@ -45,11 +49,7 @@ class HomeItemsSection extends StatelessWidget {
 
     return Column(
       children: [
-        SectionTitleRow(
-          title: 'الأصناف الرائجة',
-          showAction: true,
-          onTap: () => Get.toNamed(AppRoutes.homeCategories),
-        ),
+        const SectionTitleRow(title: 'الأصناف الرائجة', showAction: false),
         SizedBox(
           height: 250,
           child: Obx(() {
@@ -73,8 +73,14 @@ class HomeItemsSection extends StatelessWidget {
                 final soldOut = _isSoldOut(item);
                 final remain = _remaining(item);
 
+                final heroTag = itemHeroTagFromModel(
+                  item,
+                  scope: 'home-most-ordered',
+                  extra: i,
+                );
+
                 return PressableScale(
-                  onTap: () => _openItemDetail(item),
+                  onTap: () => _openItemDetail(item, heroTag),
                   child: Obx(
                     () => FoodCard(
                       item: item,
@@ -85,6 +91,7 @@ class HomeItemsSection extends StatelessWidget {
                       onAddToCart: (!soldOut && item.isActive)
                           ? () => c.addItemToCart(item)
                           : null,
+                      heroTag: heroTag,
                     ),
                   ),
                 );

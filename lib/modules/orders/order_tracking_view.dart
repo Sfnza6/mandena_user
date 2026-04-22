@@ -22,6 +22,14 @@ class OrderTrackingView extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.put(OrderTrackingController());
     final mapCtrl = fm.MapController();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final pageBg = theme.scaffoldBackgroundColor;
+    final cardColor = theme.cardColor;
+    final textColor = theme.textTheme.bodyLarge?.color ?? kText;
+    final mutedColor =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? kMuted;
+    final softFill = isDark ? const Color(0xFF1F2937) : kSoftOrange;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -106,9 +114,9 @@ class OrderTrackingView extends StatelessWidget {
         }
 
         return Scaffold(
-          backgroundColor: kBg,
+          backgroundColor: pageBg,
           appBar: AppBar(
-            backgroundColor: kBg,
+            backgroundColor: pageBg,
             elevation: 0,
             centerTitle: true,
             title: const Text(
@@ -142,7 +150,7 @@ class OrderTrackingView extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: kCard,
+                    color: cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -162,8 +170,8 @@ class OrderTrackingView extends StatelessWidget {
                       Container(
                         width: 46,
                         height: 46,
-                        decoration: const BoxDecoration(
-                          color: kSoftOrange,
+                        decoration: BoxDecoration(
+                          color: softFill,
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -182,8 +190,8 @@ class OrderTrackingView extends StatelessWidget {
                             Text(
                               'رقم الطلب: ${c.orderId.value ?? "-"}',
                               textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                color: kText,
+                              style: TextStyle(
+                                color: textColor,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 15,
                               ),
@@ -192,10 +200,7 @@ class OrderTrackingView extends StatelessWidget {
                             Text(
                               c.arabicStatus,
                               textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                color: kMuted,
-                                fontSize: 13,
-                              ),
+                              style: TextStyle(color: mutedColor, fontSize: 13),
                             ),
                           ],
                         ),
@@ -207,7 +212,7 @@ class OrderTrackingView extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: kSoftOrange,
+                          color: softFill,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
@@ -229,7 +234,7 @@ class OrderTrackingView extends StatelessWidget {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: kCard,
+                            color: cardColor,
                             borderRadius: BorderRadius.circular(22),
                             boxShadow: [
                               BoxShadow(
@@ -268,7 +273,7 @@ class OrderTrackingView extends StatelessWidget {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(.95),
+                              color: cardColor.withOpacity(.95),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Row(
@@ -283,8 +288,8 @@ class OrderTrackingView extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 Text(
                                   c.arabicStatus,
-                                  style: const TextStyle(
-                                    color: kText,
+                                  style: TextStyle(
+                                    color: textColor,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 12.5,
                                   ),
@@ -352,13 +357,16 @@ class _TrackingTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
     return Container(
       decoration: BoxDecoration(
-        color: OrderTrackingView.kCard,
+        color: cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.03),
+            color: Colors.black.withOpacity(isDark ? .18 : .03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -413,6 +421,9 @@ class _StepNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mutedColor =
+        Theme.of(context).textTheme.bodySmall?.color?.withOpacity(.8) ??
+        OrderTrackingView.kMuted;
     return Column(
       children: [
         Container(
@@ -442,9 +453,7 @@ class _StepNode extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: active
-                  ? OrderTrackingView.kPrimary
-                  : OrderTrackingView.kMuted,
+              color: active ? OrderTrackingView.kPrimary : mutedColor,
               fontSize: 11,
               height: 1.25,
               fontWeight: active ? FontWeight.w800 : FontWeight.w600,

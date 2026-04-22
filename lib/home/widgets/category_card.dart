@@ -15,6 +15,10 @@ class CategoryCircleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.textTheme.bodyLarge?.color ?? HomeUi.kTextMain;
+    final tileBg = isDark ? theme.cardColor : const Color(0xFFFFF3EC);
     return PressableScale(
       onTap: onTap,
       child: SizedBox(
@@ -25,7 +29,7 @@ class CategoryCircleCard extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF3EC),
+                color: tileBg,
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: const [
                   BoxShadow(
@@ -54,10 +58,10 @@ class CategoryCircleCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 12.5,
-                color: HomeUi.kTextMain,
+                color: textColor,
               ),
             ),
           ],
