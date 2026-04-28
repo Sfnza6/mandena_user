@@ -17,7 +17,7 @@ class _BanResult {
 
 class SplashController extends GetxController {
   /// مدة عرض الشعار قبل الانتقال
-  static const _splashDelay = Duration(milliseconds: 2400);
+  static const _splashDelay = Duration(milliseconds: 1800);
 
   final _api = ApiService();
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -39,22 +40,60 @@ class HomeController extends GetxController {
   final searchCtrl = TextEditingController();
   final searchQuery = ''.obs;
   final searchResults = <ItemModel>[].obs;
+  final loadingSearch = false.obs;
+
+  Timer? _searchDebounce;
+  int _searchSerial = 0;
 
   bool get isSearching => searchQuery.value.trim().isNotEmpty;
 
   void onSearchChanged(String value) {
-    searchQuery.value = value;
-    _applySearch();
+    final q = value.trim();
+    searchQuery.value = q;
+    _applySearchLocal();
+
+    _searchDebounce?.cancel();
+    if (q.isEmpty) {
+      loadingSearch.value = false;
+      searchResults.clear();
+      return;
+    }
+
+    // فلترة فورية محلياً، وبعدها طلب خفيف من السيرفر حتى تظهر كل الأصناف وليس الرائج فقط.
+    _searchDebounce = Timer(const Duration(milliseconds: 220), () {
+      _searchFromServer(q);
+    });
   }
 
   void clearSearch() {
+    _searchDebounce?.cancel();
     searchCtrl.clear();
     searchQuery.value = '';
     searchResults.clear();
+    loadingSearch.value = false;
   }
 
-  void _applySearch() {
-    final q = searchQuery.value.trim().toLowerCase();
+  String _canon(String v) {
+    return v
+        .toLowerCase()
+        .replaceAll('أ', 'ا')
+        .replaceAll('إ', 'ا')
+        .replaceAll('آ', 'ا')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ى', 'ي')
+        .replaceAll('ـ', '')
+        .trim();
+  }
+
+  bool _matchesItem(ItemModel item, String q) {
+    final key = _canon(q);
+    if (key.isEmpty) return false;
+    return _canon(item.name).contains(key) ||
+        _canon(item.description).contains(key);
+  }
+
+  void _applySearchLocal() {
+    final q = searchQuery.value.trim();
     if (q.isEmpty) {
       searchResults.clear();
       return;
@@ -68,19 +107,44 @@ class HomeController extends GetxController {
       merged[it.id] = it;
     }
 
-    final result = merged.values.where((item) {
-      final name = item.name.toLowerCase();
-      return name.contains(q);
-    }).toList();
-
-    result.sort((a, b) {
-      final aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
-      final bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
-      if (aStarts != bStarts) return aStarts.compareTo(bStarts);
-      return a.name.compareTo(b.name);
-    });
-
+    final result = merged.values
+        .where((item) => _matchesItem(item, q))
+        .toList();
+    _sortSearchResults(result, q);
     searchResults.assignAll(result);
+  }
+
+  void _sortSearchResults(List<ItemModel> result, String q) {
+    final key = _canon(q);
+    result.sort((a, b) {
+      final an = _canon(a.name);
+      final bn = _canon(b.name);
+      final aStarts = an.startsWith(key) ? 0 : 1;
+      final bStarts = bn.startsWith(key) ? 0 : 1;
+      if (aStarts != bStarts) return aStarts.compareTo(bStarts);
+      return an.compareTo(bn);
+    });
+  }
+
+  Future<void> _searchFromServer(String q) async {
+    final mySerial = ++_searchSerial;
+    try {
+      loadingSearch.value = true;
+      final list = await repo.searchItems(q);
+
+      if (mySerial != _searchSerial) return;
+      if (searchQuery.value.trim() != q) return;
+
+      final filtered = list.where((item) => _matchesItem(item, q)).toList();
+      _sortSearchResults(filtered, q);
+      searchResults.assignAll(filtered);
+    } catch (_) {
+      // نترك النتائج المحلية كما هي، حتى لا يختفي البحث عند ضعف الإنترنت.
+    } finally {
+      if (mySerial == _searchSerial) {
+        loadingSearch.value = false;
+      }
+    }
   }
 
   // =================== إضافات إدارة الأخطاء/الإنترنت ===================
@@ -377,6 +441,7 @@ class HomeController extends GetxController {
 
   @override
   void onClose() {
+    _searchDebounce?.cancel();
     searchCtrl.dispose();
     super.onClose();
   }
@@ -443,7 +508,7 @@ class HomeController extends GetxController {
         topRated.assignAll(list);
       }
 
-      _applySearch();
+      _applySearchLocal();
     } catch (_) {
       // نتجاهل أي خطأ بالكاش بصمت
     }
@@ -593,7 +658,7 @@ class HomeController extends GetxController {
         fetchMostOrdered(),
         fetchTopRated(),
       ]);
-      _applySearch();
+      _applySearchLocal();
     } catch (e) {
       _handleError(e);
     }
@@ -640,7 +705,7 @@ class HomeController extends GetxController {
     try {
       final list = await repo.fetchMostOrdered();
       mostOrdered.assignAll(list);
-      _applySearch();
+      _applySearchLocal();
 
       _cacheList(_kMostKey, list.map((e) => e.toJson()).toList());
     } catch (e) {
@@ -656,7 +721,7 @@ class HomeController extends GetxController {
     try {
       final list = await repo.fetchTopRated();
       topRated.assignAll(list);
-      _applySearch();
+      _applySearchLocal();
 
       _cacheList(_kTopKey, list.map((e) => e.toJson()).toList());
     } catch (e) {

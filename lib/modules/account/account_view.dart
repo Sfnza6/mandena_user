@@ -64,19 +64,7 @@ class AccountView extends GetView<AccountController> {
                     child: Column(
                       children: [
                         if (Navigator.of(context).canPop())
-                          Row(
-                            children: [
-                              IconButton(
-                                onPressed: () => Get.back(),
-                                icon: const Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const Spacer(),
-                            ],
-                          ),
-                        const SizedBox(height: 4),
+                          const SizedBox(height: 4),
                         const Center(
                           child: Text(
                             'حسابي',

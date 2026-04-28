@@ -17,7 +17,6 @@ const _kPageBg = Color(0xFFF5F5F7);
 // ignore: unused_element
 const _kCard = Colors.white;
 const _kText = Color(0xFF111827);
-const _kMuted = Color(0xFF8B95A7);
 
 class CategoriesView extends StatefulWidget {
   const CategoriesView({super.key});
@@ -130,10 +129,15 @@ class _CategoriesViewState extends State<CategoriesView> {
     final card = theme.cardColor;
     final textColor = theme.textTheme.bodyLarge?.color ?? _kText;
     final mutedColor =
-        theme.textTheme.bodySmall?.color?.withOpacity(.8) ?? _kMuted;
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ??
+        const Color.fromARGB(255, 255, 255, 255);
     final softFill = isDark ? const Color(0xFF1F2937) : const Color(0xFFFFF1E9);
-    final fieldFill = isDark ? const Color(0xFF111827) : Colors.white;
-    final borderColor = isDark ? Colors.white10 : const Color(0xFFE5E7EB);
+    final fieldFill = isDark
+        ? const Color.fromARGB(255, 255, 255, 255)
+        : Colors.white;
+    final borderColor = isDark
+        ? const Color.fromARGB(26, 255, 255, 255)
+        : const Color(0xFFE5E7EB);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -146,7 +150,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [_kPrimary, _kPrimaryDark],
+                  colors: [Color.fromRGBO(255, 90, 0, 1), _kPrimaryDark],
                 ),
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(28),

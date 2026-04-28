@@ -130,39 +130,60 @@ class HomeHeaderSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                InkWell(
-                  onTap: c.openSearch,
-                  borderRadius: BorderRadius.circular(22),
-                  child: IgnorePointer(
-                    child: TextField(
-                      textAlign: TextAlign.right,
-                      decoration: InputDecoration(
-                        hintText: 'ابحث عن صنف بالاسم...',
-                        hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          color: Color(0xFF9CA3AF),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: const BorderSide(
-                            color: HomeUi.kPrimary,
-                            width: 1.2,
-                          ),
+                Obx(
+                  () => TextField(
+                    controller: c.searchCtrl,
+                    onChanged: c.onSearchChanged,
+                    textAlign: TextAlign.right,
+                    textDirection: TextDirection.rtl,
+                    cursorColor: HomeUi.kPrimary,
+                    decoration: InputDecoration(
+                      hintText: 'ابحث عن صنف بالاسم...',
+                      hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                      prefixIcon: c.loadingSearch.value
+                          ? const Padding(
+                              padding: EdgeInsets.all(13),
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: HomeUi.kPrimary,
+                                ),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                      suffixIcon: c.searchQuery.value.trim().isNotEmpty
+                          ? IconButton(
+                              onPressed: c.clearSearch,
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                color: HomeUi.kPrimary,
+                              ),
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: const BorderSide(
+                          color: HomeUi.kPrimary,
+                          width: 1.2,
                         ),
                       ),
                     ),

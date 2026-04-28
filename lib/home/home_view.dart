@@ -52,7 +52,10 @@ class HomeView extends GetView<HomeController> {
                         children: [
                           Expanded(
                             child: Text(
-                              controller.searchResults.isEmpty
+                              controller.loadingSearch.value &&
+                                      controller.searchResults.isEmpty
+                                  ? 'جاري البحث...'
+                                  : controller.searchResults.isEmpty
                                   ? 'لا توجد أصناف مطابقة'
                                   : 'نتائج البحث (${controller.searchResults.length})',
                               textAlign: TextAlign.right,
@@ -68,38 +71,66 @@ class HomeView extends GetView<HomeController> {
                     ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final item = controller.searchResults[index];
-                        final heroTag = itemHeroTagFromModel(
-                          item,
-                          scope: 'home-search',
-                          extra: index,
-                        );
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: PressableScale(
-                            onTap: () => _openItemDetail(item, heroTag),
-                            child: Obx(
-                              () => FoodCard(
-                                item: item,
-                                isFavorite: controller.isItemFavorite(item.id),
-                                onToggleFavorite: () =>
-                                    controller.toggleFavoriteFromHome(item),
-                                onAddToCart: () =>
-                                    controller.addItemToCart(item),
-                                heroTag: heroTag,
-                                isSoldOut: false,
-                                remaining: 0,
+                  if (controller.loadingSearch.value &&
+                      controller.searchResults.isEmpty)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: HomeUi.kPrimary,
+                        ),
+                      ),
+                    )
+                  else if (controller.searchResults.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Text(
+                          'جرّب كتابة حرف أو كلمة من اسم الصنف',
+                          style: TextStyle(color: textColor),
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = controller.searchResults[index];
+                          final heroTag = itemHeroTagFromModel(
+                            item,
+                            scope: 'home-search',
+                            extra: index,
+                          );
+
+                          final soldOut = item.outOfStock;
+                          final remain = item.remaining;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: PressableScale(
+                              onTap: () => _openItemDetail(item, heroTag),
+                              child: Obx(
+                                () => FoodCard(
+                                  item: item,
+                                  isFavorite: controller.isItemFavorite(
+                                    item.id,
+                                  ),
+                                  onToggleFavorite: () =>
+                                      controller.toggleFavoriteFromHome(item),
+                                  onAddToCart: (!soldOut && item.isActive)
+                                      ? () => controller.addItemToCart(item)
+                                      : null,
+                                  heroTag: heroTag,
+                                  isSoldOut: soldOut,
+                                  remaining: remain,
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }, childCount: controller.searchResults.length),
+                          );
+                        }, childCount: controller.searchResults.length),
+                      ),
                     ),
-                  ),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 ],
               );

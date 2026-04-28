@@ -61,6 +61,7 @@ class MyOrdersController extends GetxController {
   // Sticky لتفادي ومضة الاختفاء بعد الموافقة مباشرة (اختياري)
   final Map<int, DateTime> _stickyUntil = {};
   final Duration _stickyDuration = const Duration(minutes: 10);
+
   bool _isSticky(int id) {
     final t = _stickyUntil[id];
     if (t == null) return false;
@@ -74,28 +75,73 @@ class MyOrdersController extends GetxController {
   // مجموعات الحالات
   static const _currentSet = {
     'pending',
+    'paid',
     'processing',
+
+    // ✅ طلب الاستلام عندما يصبح جاهز للزبون
+    'ready_pickup',
+
+    'ready_for_driver',
+    'searching_driver',
+    'driver_offered',
     'assigned',
-    'delivering',
+    'driver_to_pickup',
+    'on_the_way',
     'out_for_delivery',
-    'ready',
-    'paid', // في حال كانت موجودة من طلبات قديمة
+    'delivering',
+    'handover',
   };
+
   static const _doneSet = {'success', 'delivered', 'complete', 'completed'};
   static const _cancelSet = {'cancelled', 'canceled', 'rejected', 'failed'};
 
   String _normalize(String s) {
     final x = s.toLowerCase().trim();
+
     if ([
       'approved',
       'accepted',
+      'accept',
       'preparing',
+      'prepare',
       'in_prep',
       'readying',
     ].contains(x)) {
       return 'processing';
     }
-    return x;
+
+    // ✅ حالة طلب الاستلام الجاهز للعميل
+    if ([
+      'ready_pickup',
+      'pickup_ready',
+      'ready_for_pickup',
+      'prepared_pickup',
+    ].contains(x)) {
+      return 'ready_pickup';
+    }
+
+    if (['ready', 'ready_for_delivery'].contains(x)) return 'ready_for_driver';
+
+    if (['offered', 'driver_offer', 'driver_offered'].contains(x)) {
+      return 'driver_offered';
+    }
+
+    if (['searching', 'searching_driver', 'find_driver'].contains(x)) {
+      return 'searching_driver';
+    }
+
+    if (['driver_to_restaurant', 'driver_to_pickup'].contains(x)) {
+      return 'driver_to_pickup';
+    }
+
+    if (['on_way', 'on_the_way', 'out_for_delivery'].contains(x)) {
+      return 'out_for_delivery';
+    }
+
+    if (['success', 'complete', 'completed'].contains(x)) return 'delivered';
+    if (['canceled', 'cancel'].contains(x)) return 'cancelled';
+
+    return x.isEmpty ? 'pending' : x;
   }
 
   // =================== كاش الطلبات ===================
@@ -119,6 +165,7 @@ class MyOrdersController extends GetxController {
       final sp = await SharedPreferences.getInstance();
       final s = sp.getString(_cacheKeyFor(uid));
       if (s == null || s.isEmpty) return;
+
       final data = jsonDecode(s);
       if (data is! Map) return;
 
@@ -130,6 +177,7 @@ class MyOrdersController extends GetxController {
             (e) => UserOrder.fromJson(Map<String, dynamic>.from(e as Map)),
           )
           .toList();
+
       final his = hisList
           .map<UserOrder>(
             (e) => UserOrder.fromJson(Map<String, dynamic>.from(e as Map)),
@@ -154,16 +202,19 @@ class MyOrdersController extends GetxController {
   @override
   Future<void> onReady() async {
     super.onReady();
+
     // استلام orderId للتثبيت (اختياري)
     final hiArg = Get.arguments is Map ? (Get.arguments as Map) : null;
     final argId = hiArg != null
         ? int.tryParse('${hiArg['highlightOrderId'] ?? ''}')
         : null;
+
     if (argId != null) {
       _stickyUntil[argId] = DateTime.now().add(_stickyDuration);
     }
 
     await fetch();
+
     _poll = Timer.periodic(
       Duration(seconds: pollSeconds),
       (_) => fetch(silent: true),
@@ -180,28 +231,34 @@ class MyOrdersController extends GetxController {
   List<Map<String, dynamic>> _coerceList(dynamic res) {
     try {
       dynamic root = res;
+
       if (root is String) {
         root = jsonDecode(root);
       }
+
       if (root is Map && root['orders'] is List) {
         return (root['orders'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
       }
+
       if (root is Map && root['data'] is List) {
         return (root['data'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
       }
+
       if (root is List) {
         return root.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }
     } catch (_) {}
+
     return const <Map<String, dynamic>>[];
   }
 
   Future<void> fetch({bool silent = false}) async {
     int? uid;
+
     try {
       if (!silent) loading(true);
 
@@ -221,6 +278,7 @@ class MyOrdersController extends GetxController {
             snackPosition: SnackPosition.BOTTOM,
           );
         }
+
         return;
       }
 
@@ -297,10 +355,12 @@ class MyOrdersController extends GetxController {
           keep.add(o);
         }
       }
+
       cur.addAll(keep);
 
       cur.sort((a, b) => b.id.compareTo(a.id));
       his.sort((a, b) => b.id.compareTo(a.id));
+
       current.assignAll(cur);
       history.assignAll(his);
 
@@ -336,18 +396,49 @@ class MyOrdersController extends GetxController {
 
   (String, Color) statusLabel(UserOrder o) {
     final st = _normalize(o.status);
-    if (_doneSet.contains(st)) return ('مكتمل', const Color(0xFF1FA85B));
-    if (_cancelSet.contains(st)) return ('غير مكتمل', const Color(0xFFE53935));
+
+    if (_doneSet.contains(st) || st == 'delivered') {
+      return ('تم التسليم', const Color(0xFF1FA85B));
+    }
+
+    if (_cancelSet.contains(st)) {
+      if (st == 'rejected') return ('مرفوض', const Color(0xFFE53935));
+      return ('ملغي', const Color(0xFFE53935));
+    }
+
     switch (st) {
       case 'pending':
-      case 'paid': // نعرض الطلب المدفوع (لو وجد) كـ معلّق أيضاً
-        return ('معلّق', const Color(0xFFFB8C00));
+      case 'paid':
+        return ('بانتظار القبول', const Color(0xFFFB8C00));
+
       case 'processing':
-        return ('قيد التحضير', const Color(0xFF1976D2));
+        return ('جاري التحضير', const Color(0xFF1976D2));
+
+      // ✅ هذه التي تظهر للعميل بعد ضغط "تم التجهيز" من مستقبل الطلبات
+      case 'ready_pickup':
+        return ('الطلبية جاهزة', const Color(0xFF1FA85B));
+
+      case 'ready_for_driver':
+        return ('جاهز للسائق', const Color(0xFF7B1FA2));
+
+      case 'searching_driver':
+        return ('نبحث عن سائق', const Color(0xFF7B1FA2));
+
+      case 'driver_offered':
+        return ('معروض على السائق', const Color(0xFF7B1FA2));
+
       case 'assigned':
-      case 'delivering':
+        return ('السائق قبل الطلب', const Color(0xFF00897B));
+
+      case 'driver_to_pickup':
+        return ('السائق للاستلام', const Color(0xFF00897B));
+
+      case 'on_the_way':
       case 'out_for_delivery':
+      case 'delivering':
+      case 'handover':
         return ('جاري التوصيل', const Color(0xFF00897B));
+
       default:
         return (st, const Color(0xFF757575));
     }

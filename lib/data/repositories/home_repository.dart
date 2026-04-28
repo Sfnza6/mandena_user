@@ -265,21 +265,40 @@ class HomeRepository {
 
   /* -------------------- البحث -------------------- */
   Future<List<ItemModel>> searchItems(String q) async {
-    final url = _url('receiver_get_items.php?q=$q&limit=50');
+    final query = q.trim();
+    if (query.isEmpty) return [];
+
+    final url = _url(
+      'get_items.php?q=${Uri.encodeQueryComponent(query)}&limit=80',
+    );
+
     final res = await _client.get(url, headers: _requestHeaders);
+    if (kDebugMode) {
+      debugPrint('SEARCH ${url.toString()} -> ${res.statusCode}');
+      if (res.statusCode == 200) debugPrint(res.body);
+    }
     if (res.statusCode != 200) return [];
+
     dynamic d;
     try {
       d = json.decode(res.body);
     } catch (_) {
       return [];
     }
+
     final list = (d is List)
         ? d
-        : (d is Map && d['items'] is List ? d['items'] as List : const []);
+        : (d is Map && d['items'] is List)
+        ? d['items'] as List
+        : (d is Map && d['data'] is List)
+        ? d['data'] as List
+        : const [];
+
     final mapped = list
-        .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map))
+        .whereType<Map>()
+        .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
         .toList();
+
     return _mapItems(mapped);
   }
 }
