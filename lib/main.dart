@@ -71,13 +71,20 @@ Future<void> main() async {
   await GetStorage.init();
 
   final branchController = Get.put(BranchController(), permanent: true);
-  await branchController.initBranching();
+  try {
+    await branchController.initBranching();
+  } catch (e) {
+    debugPrint('⚠️ Branch init failed: $e');
+  }
 
   await Session.init();
   Get.put(ConnectionController(), permanent: true);
   await PrefsService.init();
 
-  await NotificationService.init();
+  // نشغل Firebase بشكل غير حاجب — لو فشل ما يعلق التطبيق
+  NotificationService.init().catchError((e) {
+    debugPrint('⚠️ Notification init failed: $e');
+  });
 
   runApp(const MandenaApp());
 }

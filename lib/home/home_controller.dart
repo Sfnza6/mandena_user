@@ -790,6 +790,7 @@ class HomeController extends GetxController {
   }
 
   /// ✅ يسأل أول مرة: هل أنت في نفس المكان؟ أو تريد تغيير العنوان؟
+  /// يظهر من الأعلى حتى يكون أخف على المستخدم عند بداية التطبيق.
   Future<bool> _ensureAddressForCart() async {
     final currentTitle = location.value.trim();
 
@@ -804,134 +805,143 @@ class HomeController extends GetxController {
 
     bool? answer;
 
-    await Get.bottomSheet(
+    await Get.dialog<void>(
       Directionality(
         textDirection: TextDirection.rtl,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFFCF6),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
+        child: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                 decoration: BoxDecoration(
-                  color: AppColors.brand.withOpacity(.28),
-                  borderRadius: BorderRadius.circular(999),
+                  color: const Color(0xFFFFFCF6),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.12),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.brand.withOpacity(.16),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(
-                      Icons.location_on_rounded,
-                      color: AppColors.brand,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
                       children: [
-                        const Text(
-                          'هل أنت في نفس المكان؟',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF111827),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.brand.withOpacity(.16),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.location_on_rounded,
+                            color: AppColors.brand,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          currentTitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF6B7280),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'هل أنت في نفس المكان؟',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF111827),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                currentTitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'سنتعامل مع هذا العنوان في حساب رسوم التوصيل وتتبع الطلب.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        answer = false;
-                        Get.back();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: AppColors.brand.withOpacity(.85),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      child: const Text(
-                        'تغيير المكان',
-                        style: TextStyle(
-                          color: AppColors.brand,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'سنتعامل مع هذا العنوان في حساب رسوم التوصيل وتتبع الطلب.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Color(0xFF9CA3AF),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        answer = true;
-                        Get.back();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brand,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              answer = false;
+                              Get.back();
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: AppColors.brand.withOpacity(.85),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            child: const Text(
+                              'تغيير المكان',
+                              style: TextStyle(
+                                color: AppColors.brand,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      child: const Text(
-                        'نعم، في نفس المكان',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              answer = true;
+                              Get.back();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.brand,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            child: const Text(
+                              'نعم، في نفس المكان',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),
-      isScrollControlled: true,
-      // 🆕 مهم: لا يمكن إغلاق البوكس بالضغط خارج أو بالسحب
-      isDismissible: false,
-      enableDrag: false,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(.18),
     );
 
     if (answer == true) {
@@ -1125,14 +1135,15 @@ class HomeController extends GetxController {
     // ✅ الرسالة تظهر عند فتح التطبيق فقط (onReady)
     try {
       // 🔹 استدعاء منطق السلة الرسمي: add(itemId)
-      await _cart.add(itemId, qty: 1);
+      await _cart.add(itemId, qty: 1, showSnack: false);
       final name = _extractItemName(item);
 
       // Snackbar خفيف يعلم المستخدم أن الصنف أُضيف
       Get.rawSnackbar(
+        snackPosition: SnackPosition.TOP,
         snackStyle: SnackStyle.FLOATING,
         borderRadius: 16,
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         backgroundColor: const Color(0xFF111827),
         messageText: Directionality(

@@ -35,18 +35,20 @@ class _NewPasswordViewState extends State<NewPasswordView> {
   @override
   Widget build(BuildContext context) {
     // 🎨 ألوان بنفس روح شاشة اللوجين / التسجيل + الليل
-    const kPrimary = Color(0xFF6F3F17); // بني EVORANTA
+    const kPrimary = Color(0xFFFF5A00); // برتقالي EVORANTA
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     final kPageBg = theme.scaffoldBackgroundColor;
     final kDark = isDark ? Colors.white : const Color(0xFF1F2933);
-    final kFieldFill = theme.inputDecorationTheme.fillColor ??
-        (isDark ? theme.cardColor.withOpacity(0.9) : const Color(0xFFF2F3F7));
+    final kFieldFill =
+        theme.inputDecorationTheme.fillColor ??
+        (isDark ? theme.cardColor.withOpacity(0.9) : const Color(0xFFFFFAF6));
     final cardColor = theme.cardColor;
-    final subTextColor =
-        isDark ? Colors.grey.shade400 : const Color(0xFF6B7280);
+    final subTextColor = isDark
+        ? Colors.grey.shade400
+        : const Color(0xFF6B7280);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -102,7 +104,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                       padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.07),
@@ -152,7 +154,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                                 border: const OutlineInputBorder(
                                   borderSide: BorderSide.none,
                                   borderRadius: BorderRadius.all(
-                                    Radius.circular(10),
+                                    Radius.circular(16),
                                   ),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -162,8 +164,8 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                               ),
                               validator: (v) =>
                                   (v == null || v.trim().length < 6)
-                                      ? 'ستة أحرف على الأقل'
-                                      : null,
+                                  ? 'ستة أحرف على الأقل'
+                                  : null,
                             ),
                             const SizedBox(height: 10),
 
@@ -184,7 +186,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                                 border: const OutlineInputBorder(
                                   borderSide: BorderSide.none,
                                   borderRadius: BorderRadius.all(
-                                    Radius.circular(10),
+                                    Radius.circular(16),
                                   ),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -192,25 +194,23 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                                   vertical: 14,
                                 ),
                               ),
-                              validator: (v) =>
-                                  (v?.trim() != _p1.text.trim())
-                                      ? 'تأكيد كلمة المرور غير متطابق'
-                                      : null,
+                              validator: (v) => (v?.trim() != _p1.text.trim())
+                                  ? 'تأكيد كلمة المرور غير متطابق'
+                                  : null,
                             ),
                             const SizedBox(height: 14),
 
                             // زر الحفظ
                             Obx(
                               () => SizedBox(
-                                height: 46,
+                                height: 50,
                                 child: ElevatedButton(
-                                  onPressed:
-                                      c.resetting.value ? null : _save,
+                                  onPressed: c.resetting.value ? null : _save,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: kPrimary,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                     elevation: 0,
                                   ),
@@ -257,14 +257,14 @@ class _NewPasswordViewState extends State<NewPasswordView> {
       Get.snackbar(
         'تم',
         'تم تحديث كلمة المرور. يمكنك تسجيل الدخول الآن',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
       Get.offAllNamed(AppRoutes.login);
     } else {
       Get.snackbar(
         'خطأ',
         (r['message'] ?? 'تعذّر التحديث').toString(),
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
     }
   }
@@ -304,12 +304,7 @@ class _HeaderPainter extends CustomPainter {
     final path = Path()
       ..moveTo(0, 0)
       ..lineTo(0, h - depth)
-      ..quadraticBezierTo(
-        size.width / 2,
-        h + depth,
-        size.width,
-        h - depth,
-      )
+      ..quadraticBezierTo(size.width / 2, h + depth, size.width, h - depth)
       ..lineTo(size.width, 0)
       ..close();
 

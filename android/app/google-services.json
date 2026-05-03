@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "914622534762",
-    "project_id": "mandena-8866a",
-    "storage_bucket": "mandena-8866a.firebasestorage.app"
+    "project_number": "1030980911701",
+    "project_id": "mandena-notifications",
+    "storage_bucket": "mandena-notifications.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:914622534762:android:138a5b730e155fa5956613",
+        "mobilesdk_app_id": "1:1030980911701:android:23361354487012973bcadc",
         "android_client_info": {
-          "package_name": "com.example.mandena"
+          "package_name": "com.brainware.mandena.user"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBO733hh4ph2Xg0SMy2AZngftU3NVxStQQ"
+          "current_key": "AIzaSyDvbM5ho5y13YOkgsw4RaUuOk244zvwph4"
         }
       ],
       "services": {

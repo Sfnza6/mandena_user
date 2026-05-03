@@ -8,7 +8,7 @@ class ConnectionController extends GetxController {
   static const String noConnectionRoute = '/no_connection';
 
   final Connectivity _connectivity = Connectivity();
-  StreamSubscription<ConnectivityResult>? _sub;
+  StreamSubscription? _sub;
 
   @override
   void onInit() {
@@ -20,16 +20,26 @@ class ConnectionController extends GetxController {
   Future<void> _initConnectivity() async {
     try {
       // فحص أولي
-      final ConnectivityResult result = await _connectivity.checkConnectivity();
-      _handleStatus(result);
+      final dynamic result = await _connectivity.checkConnectivity();
+      _handleDynamic(result);
 
       // متابعة التغيّر في الاتصال
-      _sub = _connectivity.onConnectivityChanged.listen((result) {
-        _handleStatus(result);
+      _sub = _connectivity.onConnectivityChanged.listen((dynamic result) {
+        _handleDynamic(result);
       });
     } catch (_) {
       // لو صار خطأ اعتبره بدون إنترنت
       _handleStatus(ConnectivityResult.none);
+    }
+  }
+
+  /// معالجة النتيجة سواء كانت List أو قيمة واحدة
+  void _handleDynamic(dynamic result) {
+    if (result is List<ConnectivityResult>) {
+      final hasConnection = result.any((e) => e != ConnectivityResult.none);
+      _handleConnected(hasConnection);
+    } else if (result is ConnectivityResult) {
+      _handleStatus(result);
     }
   }
 
@@ -38,7 +48,10 @@ class ConnectionController extends GetxController {
     final bool connected = result == ConnectivityResult.mobile ||
         result == ConnectivityResult.wifi ||
         result == ConnectivityResult.ethernet;
+    _handleConnected(connected);
+  }
 
+  void _handleConnected(bool connected) {
     if (!connected) {
       // مافيش إنترنت → افتح شاشة no_connection لو مش مفتوحة أصلاً
       if (Get.currentRoute != noConnectionRoute) {
@@ -58,8 +71,8 @@ class ConnectionController extends GetxController {
 
   /// زر "إعادة المحاولة" في شاشة no_connection
   Future<void> retryConnection() async {
-    final ConnectivityResult result = await _connectivity.checkConnectivity();
-    _handleStatus(result);
+    final dynamic result = await _connectivity.checkConnectivity();
+    _handleDynamic(result);
   }
 
   @override

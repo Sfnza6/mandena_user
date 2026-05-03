@@ -17,12 +17,13 @@ class OrderTrackingView extends StatelessWidget {
   static const Color kSoftOrange = Color(0xFFFFF1E9);
   static const Color kDriverAccent = Color(0xFFFFA726);
 
-  static const List<String> _steps = [
-    'استلام\nالطلب',
-    'جاري\nالتحضير',
-    'اختيار\nالسائق',
-    'في\nالطريق',
-    'تم\nالتسليم',
+  // ignore: unused_field
+  static const List<String> _steps = <String>[
+    'بانتظار\\nالقبول',
+    'جاري التحضير\\nوالبحث',
+    'تم تعيين\\nسائق',
+    'جاري\\nالتوصيل',
+    'مكتملة',
   ];
 
   @override
@@ -41,7 +42,8 @@ class OrderTrackingView extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Obx(() {
-        final current = c.stepIndex.value.clamp(0, _steps.length - 1);
+        final labels = c.trackingSteps;
+        final current = c.stepIndex.value.clamp(0, labels.length - 1);
         final LatLng? dpos = c.driverPos.value;
 
         if (dpos != null) {
@@ -60,7 +62,7 @@ class OrderTrackingView extends StatelessWidget {
               point: c.pickupPos.value!,
               width: 42,
               height: 42,
-              child: _MapPin(
+              child: const _MapPin(
                 color: kPrimary,
                 icon: Icons.store_mall_directory_rounded,
               ),
@@ -113,132 +115,166 @@ class OrderTrackingView extends StatelessWidget {
             ),
             iconTheme: const IconThemeData(color: kPrimary),
           ),
-          body: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-                child: _TrackingTimeline(
-                  currentStep: current,
-                  activeColor: kPrimary,
-                  inactiveColor: const Color(0xFFFFD8C2),
-                  labels: _steps,
+          body: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                  child: _StatusCard(
+                    cardColor: cardColor,
+                    softFill: softFill,
+                    textColor: textColor,
+                    mutedColor: mutedColor,
+                    orderId: c.orderId.value,
+                    status: c.arabicStatus,
+                    hint: c.statusHint,
+                    isCancelled: c.isCancelledStatus,
+                    isDelivered: c.isDeliveredStatus,
+                    onRefresh: c.refreshNow,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: _StatusCard(
-                  cardColor: cardColor,
-                  softFill: softFill,
-                  textColor: textColor,
-                  mutedColor: mutedColor,
-                  orderId: c.orderId.value,
-                  status: c.arabicStatus,
-                  hint: c.statusHint,
-                  isCancelled: c.isCancelledStatus,
-                  isDelivered: c.isDeliveredStatus,
-                  onRefresh: c.refreshNow,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(22),
-                    child: Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(22),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(.04),
-                                blurRadius: 12,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: fm.FlutterMap(
-                            mapController: mapCtrl,
-                            key: ValueKey(
-                              '${center.latitude},${center.longitude},${markers.length}',
-                            ),
-                            options: fm.MapOptions(
-                              initialCenter: center,
-                              initialZoom: dpos == null ? 13 : 15,
-                            ),
-                            children: [
-                              fm.TileLayer(
-                                urlTemplate:
-                                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                subdomains: const ['a', 'b', 'c'],
-                                userAgentPackageName: 'com.evoranta.app',
-                              ),
-                              fm.MarkerLayer(markers: markers),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          right: 12,
-                          top: 12,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
+                const SizedBox(height: 4),
+                Expanded(
+                  flex: 10,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Stack(
+                        children: [
+                          Container(
                             decoration: BoxDecoration(
-                              color: cardColor.withOpacity(.95),
-                              borderRadius: BorderRadius.circular(14),
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  color: Colors.black.withOpacity(.04),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              textDirection: TextDirection.rtl,
+                            child: fm.FlutterMap(
+                              mapController: mapCtrl,
+                              key: ValueKey(
+                                '${center.latitude},${center.longitude},${markers.length}',
+                              ),
+                              options: fm.MapOptions(
+                                initialCenter: center,
+                                initialZoom: dpos == null ? 13 : 15,
+                              ),
                               children: [
-                                Icon(
-                                  dpos == null
-                                      ? Icons.location_searching_rounded
-                                      : Icons.delivery_dining_rounded,
-                                  color: kPrimary,
-                                  size: 18,
+                                fm.TileLayer(
+                                  urlTemplate:
+                                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                  subdomains: const ['a', 'b', 'c'],
+                                  userAgentPackageName: 'com.evoranta.app',
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  c.arabicStatus,
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12.5,
-                                  ),
-                                ),
+                                fm.MarkerLayer(markers: markers),
                               ],
                             ),
                           ),
-                        ),
-                        if (c.isCancelledStatus)
-                          _statusBanner(c.arabicStatus, Colors.red),
-                        if (c.isDeliveredStatus)
-                          _statusBanner('تم التسليم بنجاح', Colors.green),
-                      ],
+                          Positioned(
+                            right: 12,
+                            top: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: cardColor.withOpacity(.95),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                textDirection: TextDirection.rtl,
+                                children: [
+                                  Icon(
+                                    dpos == null
+                                        ? Icons.location_searching_rounded
+                                        : Icons.delivery_dining_rounded,
+                                    color: kPrimary,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    c.arabicStatus,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            left: 14,
+                            bottom: 14,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: c.refreshNow,
+                                borderRadius: BorderRadius.circular(18),
+                                child: Ink(
+                                  width: 58,
+                                  height: 58,
+                                  decoration: BoxDecoration(
+                                    color: kPrimary,
+                                    borderRadius: BorderRadius.circular(18),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: kPrimary.withOpacity(.28),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.refresh_rounded,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (c.isCancelledStatus)
+                            _statusBanner(c.arabicStatus, Colors.red),
+                          if (c.isDeliveredStatus)
+                            _statusBanner('مكتملة', Colors.green),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: kPrimary,
-            onPressed: c.refreshNow,
-            child: const Icon(Icons.refresh_rounded, color: Colors.white),
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  child: _BottomStepsCard(
+                    currentStep: current,
+                    labels: labels,
+                    times: List<String>.generate(
+                      labels.length,
+                      (i) => c.stepTimeLabel(i),
+                    ),
+                    activeColor: kPrimary,
+                    inactiveColor: const Color(0xFFFFD8C2),
+                    isCancelled: c.isCancelledStatus,
+                    isDelivered: c.isDeliveredStatus,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }),
@@ -411,127 +447,299 @@ class _MapPin extends StatelessWidget {
   }
 }
 
-class _TrackingTimeline extends StatelessWidget {
-  final int currentStep;
-  final List<String> labels;
-  final Color activeColor;
-  final Color inactiveColor;
-
-  const _TrackingTimeline({
+class _BottomStepsCard extends StatelessWidget {
+  const _BottomStepsCard({
     required this.currentStep,
     required this.labels,
+    required this.times,
     required this.activeColor,
     required this.inactiveColor,
+    required this.isCancelled,
+    required this.isDelivered,
   });
+
+  final int currentStep;
+  final List<String> labels;
+  final List<String> times;
+  final Color activeColor;
+  final Color inactiveColor;
+  final bool isCancelled;
+  final bool isDelivered;
+
+  static const List<IconData> _icons = [
+    Icons.hourglass_top_rounded,
+    Icons.restaurant_rounded,
+    Icons.assignment_ind_rounded,
+    Icons.delivery_dining_rounded,
+    Icons.check_circle_rounded,
+  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final muted =
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ??
+        OrderTrackingView.kMuted;
     final cardColor = theme.cardColor;
 
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? .18 : .035),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        textDirection: TextDirection.rtl,
-        children: List.generate(labels.length * 2 - 1, (i) {
-          if (i.isOdd) {
-            final leftIndex = (i - 1) ~/ 2;
-            final done = currentStep > leftIndex;
-            return Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(top: 11),
-                height: 3,
-                decoration: BoxDecoration(
-                  color: done ? activeColor : inactiveColor,
-                  borderRadius: BorderRadius.circular(2),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'مراحل الطلب',
+                      style: TextStyle(
+                        color: theme.textTheme.bodyLarge?.color,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      isCancelled
+                          ? 'تم إيقاف تقدم الطلب، ويمكنك العودة للطلبات لعمل طلب جديد.'
+                          : isDelivered
+                          ? 'تم الوصول إلى آخر مرحلة بنجاح.'
+                          : 'يعرض وقت كل إجراء تم في الطلب: القبول، تعيين السائق، بدء التوصيل، والاكتمال.',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: muted,
+                        fontSize: 10.5,
+                        height: 1.35,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          }
-
-          final idx = i ~/ 2;
-          final isActive = currentStep >= idx;
-          return _StepNode(
-            label: labels[idx],
-            active: isActive,
-            activeColor: activeColor,
-            inactiveColor: inactiveColor,
-          );
-        }),
+              const SizedBox(width: 10),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: OrderTrackingView.kSoftOrange,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  isDelivered
+                      ? Icons.flag_circle_rounded
+                      : isCancelled
+                      ? Icons.error_outline_rounded
+                      : Icons.timeline_rounded,
+                  color: isCancelled
+                      ? Colors.red
+                      : isDelivered
+                      ? Colors.green
+                      : activeColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 124,
+            child: ListView.separated(
+              padding: EdgeInsets.zero,
+              scrollDirection: Axis.horizontal,
+              itemCount: labels.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                return _StepProgressItem(
+                  label: labels[i],
+                  eta: i < times.length ? times[i] : '—',
+                  icon: _icons[i],
+                  state: _stateForStep(i),
+                  activeColor: activeColor,
+                  inactiveColor: inactiveColor,
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  _StepVisualState _stateForStep(int index) {
+    if (isCancelled) {
+      return index == 0 ? _StepVisualState.active : _StepVisualState.upcoming;
+    }
+    if (index < currentStep) return _StepVisualState.done;
+    if (index == currentStep) return _StepVisualState.active;
+    return _StepVisualState.upcoming;
+  }
+
+  // ignore: unused_element
+  String _etaForStep(int index) {
+    if (isCancelled) {
+      return index == 0 ? 'توقف الطلب' : '—';
+    }
+    if (index < currentStep) return 'تم الوصول';
+    if (index == currentStep) return isDelivered ? 'تمت الآن' : 'الآن';
+
+    switch (index) {
+      case 1:
+        return '5 - 10 د';
+      case 2:
+        return '10 - 20 د';
+      case 3:
+        return '20 - 35 د';
+      case 4:
+        return 'عند التسليم';
+      default:
+        return 'قريباً';
+    }
+  }
 }
 
-class _StepNode extends StatelessWidget {
-  final String label;
-  final bool active;
-  final Color activeColor;
-  final Color inactiveColor;
+enum _StepVisualState { done, active, upcoming }
 
-  const _StepNode({
+class _StepProgressItem extends StatelessWidget {
+  const _StepProgressItem({
     required this.label,
-    required this.active,
+    required this.eta,
+    required this.icon,
+    required this.state,
     required this.activeColor,
     required this.inactiveColor,
   });
 
+  final String label;
+  final String eta;
+  final IconData icon;
+  final _StepVisualState state;
+  final Color activeColor;
+  final Color inactiveColor;
+
   @override
   Widget build(BuildContext context) {
+    final bool isDone = state == _StepVisualState.done;
+    final bool isActive = state == _StepVisualState.active;
+    final theme = Theme.of(context);
     final mutedColor =
-        Theme.of(context).textTheme.bodySmall?.color?.withOpacity(.8) ??
+        theme.textTheme.bodySmall?.color?.withOpacity(.8) ??
         OrderTrackingView.kMuted;
 
-    return Column(
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: active ? activeColor : inactiveColor,
-            shape: BoxShape.circle,
-            boxShadow: active
-                ? [
-                    BoxShadow(
-                      color: activeColor.withOpacity(.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: active
-              ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
-              : null,
+    final Color ringColor = isDone || isActive ? activeColor : inactiveColor;
+    final Color fillColor = isDone
+        ? activeColor.withOpacity(.12)
+        : isActive
+        ? OrderTrackingView.kSoftOrange
+        : Colors.transparent;
+    final Color iconColor = isDone || isActive ? activeColor : mutedColor;
+    final Color etaBg = isDone
+        ? activeColor.withOpacity(.10)
+        : isActive
+        ? OrderTrackingView.kSoftOrange
+        : const Color(0xFFF4F4F5);
+
+    return Container(
+      width: 96,
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isActive ? activeColor.withOpacity(.26) : Colors.black12,
         ),
-        const SizedBox(height: 6),
-        SizedBox(
-          width: 52,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: active ? OrderTrackingView.kPrimary : mutedColor,
-              fontSize: 10.2,
-              height: 1.25,
-              fontWeight: active ? FontWeight.w900 : FontWeight.w600,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          SizedBox(
+            width: 42,
+            height: 42,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: CircularProgressIndicator(
+                    value: isDone
+                        ? 1
+                        : isActive
+                        ? null
+                        : 1,
+                    strokeWidth: isActive ? 3.6 : 2.6,
+                    backgroundColor: inactiveColor.withOpacity(.55),
+                    valueColor: AlwaysStoppedAnimation<Color>(ringColor),
+                  ),
+                ),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: fillColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isDone ? Icons.check_rounded : icon,
+                    color: iconColor,
+                    size: 17,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+          SizedBox(
+            height: 38,
+            child: Center(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isActive || isDone
+                      ? OrderTrackingView.kText
+                      : mutedColor,
+                  fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
+                  fontSize: 9.8,
+                  height: 1.2,
+                ),
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+            decoration: BoxDecoration(
+              color: etaBg,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              eta,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isDone || isActive ? activeColor : mutedColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 9.0,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

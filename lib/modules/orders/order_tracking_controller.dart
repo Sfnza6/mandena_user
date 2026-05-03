@@ -13,7 +13,9 @@ class OrderTrackingController extends GetxController {
 
   /// الحالة الحالية كما تظهر في قاعدة البيانات بعد توحيد الأسماء.
   final status = 'pending'.obs;
+  final statusOrder = 'delivery'.obs;
   final stepIndex = 0.obs;
+  final stepTimes = <int, String>{}.obs;
 
   final driverId = RxnInt();
   final driverPos = Rxn<LatLng>();
@@ -32,6 +34,12 @@ class OrderTrackingController extends GetxController {
     final args = Get.arguments;
     if (args is Map && args['orderId'] != null) {
       orderId.value = int.tryParse(args['orderId'].toString());
+      final initialStatusOrder = (args['status_order'] ?? args['statusOrder'])
+          ?.toString();
+      if (initialStatusOrder == 'pickup' ||
+          initialStatusOrder == 'internal_pickup') {
+        statusOrder.value = initialStatusOrder!;
+      }
     }
   }
 
@@ -76,7 +84,9 @@ class OrderTrackingController extends GetxController {
       final raw = (res['status'] ?? res['state'] ?? 'pending').toString();
       final s = normalizeStatus(raw);
       status.value = s;
+      statusOrder.value = _extractStatusOrder(res);
       stepIndex.value = _mapStatusToStep(s);
+      _extractStepTimes(res);
 
       final pLat = _toD(res['pickup_lat']);
       final pLng = _toD(res['pickup_lng']);
@@ -87,7 +97,10 @@ class OrderTrackingController extends GetxController {
       if (dLat != null && dLng != null) destPos.value = LatLng(dLat, dLng);
 
       final did = int.tryParse('${res['driver_id'] ?? ''}');
-      if (did != null && did > 0) {
+      if (isPickupOrder) {
+        driverId.value = null;
+        _stopDriverPolling();
+      } else if (did != null && did > 0) {
         if (driverId.value != did) {
           driverId.value = did;
           _startDriverPolling();
@@ -155,6 +168,167 @@ class OrderTrackingController extends GetxController {
     }
   }
 
+  String _extractStatusOrder(Map<dynamic, dynamic> res) {
+    final order = (res['order'] is Map)
+        ? Map<String, dynamic>.from(res['order'])
+        : const <String, dynamic>{};
+    final raw =
+        (res['status_order'] ??
+                order['status_order'] ??
+                res['status_order_label'] ??
+                order['status_order_label'] ??
+                'delivery')
+            .toString()
+            .toLowerCase()
+            .trim();
+    if (raw == 'pickup' || raw == 'استلام خارجي') return 'pickup';
+    if (raw == 'internal_pickup' || raw == 'استلام داخلي') {
+      return 'internal_pickup';
+    }
+    return 'delivery';
+  }
+
+  bool get isPickupOrder =>
+      statusOrder.value == 'pickup' || statusOrder.value == 'internal_pickup';
+
+  bool get isInternalPickup => statusOrder.value == 'internal_pickup';
+
+  List<String> get trackingSteps {
+    if (isPickupOrder) {
+      return const <String>[
+        'بانتظار\nالقبول',
+        'جاري\nالتحضير',
+        'تم\nالتجهيز',
+        'مكتملة',
+      ];
+    }
+
+    return const <String>[
+      'بانتظار\nالقبول',
+      'جاري التحضير\nوالبحث',
+      'تم تعيين\nسائق',
+      'جاري\nالتوصيل',
+      'مكتملة',
+    ];
+  }
+
+  void _extractStepTimes(Map<dynamic, dynamic> res) {
+    final order = (res['order'] is Map)
+        ? Map<String, dynamic>.from(res['order'])
+        : const <String, dynamic>{};
+
+    dynamic pick(List<String> keys) {
+      for (final k in keys) {
+        final rootVal = res[k];
+        if (_hasDateValue(rootVal)) return rootVal;
+
+        final orderVal = order[k];
+        if (_hasDateValue(orderVal)) return orderVal;
+      }
+      return null;
+    }
+
+    final rawTimes = <int, dynamic>{
+      0: pick(const [
+        'created_at',
+        'ordered_at',
+        'order_time',
+        'customer_ordered_at',
+      ]),
+      1: pick(const [
+        'approved_at',
+        'accepted_at',
+        'admin_approved_at',
+        'processing_at',
+        'preparing_at',
+        'searching_driver_at',
+        'ready_for_driver_at',
+      ]),
+      2: pick(const [
+        'ready_at',
+        'assigned_at',
+        'driver_assigned_at',
+        'driver_accepted_at',
+        'accepted_driver_at',
+        'driver_to_pickup_at',
+      ]),
+      3: pick(const [
+        'on_the_way_at',
+        'out_for_delivery_at',
+        'delivering_at',
+        'handover_at',
+        'picked_up_at',
+      ]),
+      4: pick(const ['delivered_at', 'completed_at', 'complete_at']),
+    };
+
+    // بعض الحقول عندك محفوظة بتوقيت السيرفر UTC وبعضها بتوقيت ليبيا.
+    // لذلك نطبّع العرض فقط حتى لا تظهر مرحلة لاحقة بوقت أقدم من المرحلة السابقة.
+    final parsed = <int, DateTime?>{};
+    DateTime? previous;
+
+    for (int i = 0; i <= 4; i++) {
+      DateTime? dt = _parseStepDateTime(rawTimes[i]);
+
+      if (dt != null && previous != null && dt.isBefore(previous)) {
+        int guard = 0;
+        while (dt!.isBefore(previous) && guard < 3) {
+          dt = dt.add(const Duration(hours: 2));
+          guard++;
+        }
+      }
+
+      parsed[i] = dt;
+      if (dt != null) previous = dt;
+    }
+
+    stepTimes.assignAll(<int, String>{
+      for (int i = 0; i <= 4; i++) i: _formatStepTime(parsed[i], rawTimes[i]),
+    });
+  }
+
+  bool _hasDateValue(dynamic value) {
+    if (value == null) return false;
+    final s = value.toString().trim();
+    return s.isNotEmpty &&
+        s.toLowerCase() != 'null' &&
+        s != '0000-00-00 00:00:00';
+  }
+
+  DateTime? _parseStepDateTime(dynamic raw) {
+    if (!_hasDateValue(raw)) return null;
+    final s = raw.toString().trim();
+
+    DateTime? dt = DateTime.tryParse(s);
+    dt ??= DateTime.tryParse(s.replaceFirst(' ', 'T'));
+    return dt;
+  }
+
+  String _formatStepTime(DateTime? dt, dynamic fallbackRaw) {
+    if (dt != null) {
+      final hh = dt.hour.toString().padLeft(2, '0');
+      final mm = dt.minute.toString().padLeft(2, '0');
+      return '$hh:$mm';
+    }
+
+    if (!_hasDateValue(fallbackRaw)) return '—';
+    final s = fallbackRaw.toString().trim();
+    final match = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(s);
+    if (match != null) {
+      final hh = match.group(1)!.padLeft(2, '0');
+      final mm = match.group(2)!;
+      return '$hh:$mm';
+    }
+    return s;
+  }
+
+  String stepTimeLabel(int index) {
+    final realIndex = (isPickupOrder && index == 3) ? 4 : index;
+    final t = stepTimes[realIndex]?.trim() ?? '—';
+    if (t.isEmpty || t == '—') return '—';
+    return t;
+  }
+
   double? _toD(dynamic v) {
     if (v == null) return null;
     final s = v.toString().trim();
@@ -176,6 +350,14 @@ class OrderTrackingController extends GetxController {
     }
 
     if (const ['prepare', 'preparing'].contains(x)) return 'processing';
+    if (const [
+      'ready_pickup',
+      'pickup_ready',
+      'ready_for_pickup',
+      'prepared_pickup',
+    ].contains(x)) {
+      return 'ready_pickup';
+    }
     if (const ['ready', 'ready_for_delivery'].contains(x)) {
       return 'ready_for_driver';
     }
@@ -200,21 +382,46 @@ class OrderTrackingController extends GetxController {
   }
 
   int _mapStatusToStep(String s) {
+    if (isPickupOrder) {
+      switch (s) {
+        case 'pending':
+        case 'paid':
+          return 0;
+        case 'processing':
+        case 'ready_for_driver':
+        case 'searching_driver':
+        case 'driver_offered':
+        case 'assigned':
+        case 'driver_to_pickup':
+          return 1;
+        case 'ready_pickup':
+          return 2;
+        case 'delivered':
+          return 3;
+        case 'rejected':
+        case 'cancelled':
+        case 'failed':
+          return 0;
+        default:
+          return 0;
+      }
+    }
+
     switch (s) {
       case 'pending':
       case 'paid':
         return 0;
 
       case 'processing':
-        return 1;
-
       case 'ready_for_driver':
       case 'searching_driver':
       case 'driver_offered':
-        return 2;
+        return 1;
 
       case 'assigned':
       case 'driver_to_pickup':
+        return 2;
+
       case 'on_the_way':
       case 'out_for_delivery':
       case 'delivering':
@@ -242,65 +449,111 @@ class OrderTrackingController extends GetxController {
   bool get isTerminalStatus => isCancelledStatus || isDeliveredStatus;
 
   String get arabicStatus {
+    if (isPickupOrder) {
+      switch (status.value) {
+        case 'pending':
+        case 'paid':
+          return '⏳ بانتظار قبول الطلب';
+        case 'processing':
+        case 'ready_for_driver':
+        case 'searching_driver':
+        case 'driver_offered':
+        case 'assigned':
+        case 'driver_to_pickup':
+          return '🍳 جاري التحضير';
+        case 'ready_pickup':
+          return '✅ الطلب جاهز';
+        case 'delivered':
+          return '✅ مكتملة';
+        case 'rejected':
+          return '❌ تم رفض الطلب';
+        case 'cancelled':
+        case 'failed':
+          return '❌ تم إلغاء الطلب';
+        default:
+          return 'جاري تحديث حالة الطلب';
+      }
+    }
+
     switch (status.value) {
       case 'pending':
       case 'paid':
-        return 'بانتظار قبول الطلب';
+        return '⏳ بانتظار قبول الطلب';
       case 'processing':
-        return 'جاري تحضير الطلب';
       case 'ready_for_driver':
-        return 'الطلب جاهز ونبحث عن سائق';
       case 'searching_driver':
-        return 'جاري البحث عن أقرب سائق';
       case 'driver_offered':
-        return 'تم إرسال الطلب للسائق';
+        return '🍳 جاري التحضير / جاري البحث عن سائق';
       case 'assigned':
-        return 'تم قبول الطلب من السائق';
       case 'driver_to_pickup':
-        return 'السائق متجه لاستلام الطلب';
+        return '🚗 جاري التحضير / تم تعيين سائق';
       case 'on_the_way':
       case 'out_for_delivery':
       case 'delivering':
-        return 'السائق في الطريق إليك';
       case 'handover':
-        return 'جاري تسليم الطلب';
+        return '🏃 جاري التوصيل';
       case 'delivered':
-        return 'تم التسليم بنجاح';
+        return '✅ مكتملة';
       case 'rejected':
-        return 'تم رفض الطلب';
+        return '❌ تم رفض الطلب';
       case 'cancelled':
       case 'failed':
-        return 'تم إلغاء الطلب';
+        return '❌ تم إلغاء الطلب';
       default:
         return 'جاري تحديث حالة الطلب';
     }
   }
 
   String get statusHint {
+    if (isPickupOrder) {
+      final type = isInternalPickup ? 'استلام داخلي' : 'استلام خارجي';
+      switch (status.value) {
+        case 'pending':
+        case 'paid':
+          return 'وصل طلبك للمطعم وسيتم مراجعته خلال لحظات.';
+        case 'processing':
+        case 'ready_for_driver':
+        case 'searching_driver':
+        case 'driver_offered':
+        case 'assigned':
+        case 'driver_to_pickup':
+          return 'طلبك $type وهو الآن قيد التحضير داخل المطعم.';
+        case 'ready_pickup':
+          return 'طلبك جاهز للاستلام.';
+        case 'delivered':
+          return 'تم اكتمال الطلب بنجاح. بالعافية!';
+        case 'rejected':
+        case 'cancelled':
+        case 'failed':
+          return 'هذا الطلب لم يكتمل. يمكنك إنشاء طلب جديد.';
+        default:
+          return 'سيتم تحديث حالة الطلب تلقائياً.';
+      }
+    }
+
     switch (status.value) {
       case 'pending':
       case 'paid':
         return 'وصل طلبك للمطعم وسيتم مراجعته خلال لحظات.';
       case 'processing':
-        return 'المطعم يعمل على تجهيز طلبك الآن.';
       case 'ready_for_driver':
       case 'searching_driver':
       case 'driver_offered':
-        return 'الطلب جاهز، ويتم اختيار أقرب سائق تابع لنفس الفرع.';
+        return 'المطعم يجهّز طلبك الآن، والنظام يبحث عن أقرب سائق متاح.';
       case 'assigned':
       case 'driver_to_pickup':
-        return 'تم تحديد السائق وسيبدأ التوصيل بعد استلام الطلب.';
+        return 'تم تعيين السائق لطلبك، والطلب ما زال قيد التحضير حتى يستلمه السائق.';
       case 'on_the_way':
       case 'out_for_delivery':
       case 'delivering':
       case 'handover':
-        return 'تابع موقع السائق على الخريطة حتى يصل إليك.';
+        return 'السائق استلم الطلب وهو الآن في مرحلة التوصيل. تابع موقعه على الخريطة.';
       case 'delivered':
-        return 'نأمل أن تكون تجربتك ممتازة. بالعافية.';
+        return 'تم اكتمال الطلب بنجاح. بالعافية!';
       case 'rejected':
       case 'cancelled':
       case 'failed':
-        return 'هذا الطلب لم يكتمل. يمكنك مراجعة التفاصيل أو إنشاء طلب جديد.';
+        return 'هذا الطلب لم يكتمل. يمكنك إنشاء طلب جديد.';
       default:
         return 'سيتم تحديث حالة الطلب تلقائياً.';
     }

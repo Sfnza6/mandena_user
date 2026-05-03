@@ -207,7 +207,10 @@ class MyOrdersPage extends StatelessWidget {
                             ),
                             onPressed: () => Get.toNamed(
                               '/order-details',
-                              arguments: {'orderId': o.id},
+                              arguments: {
+                                'orderId': o.id,
+                                'status_order': o.statusOrder,
+                              },
                             ),
                             child: const Text(
                               'تفاصيل الطلب',
@@ -230,7 +233,10 @@ class MyOrdersPage extends StatelessWidget {
                             ),
                             onPressed: () => Get.toNamed(
                               '/order-tracking',
-                              arguments: {'orderId': o.id},
+                              arguments: {
+                                'orderId': o.id,
+                                'status_order': o.statusOrder,
+                              },
                             ),
                             child: const Text(
                               'تتبع الطلب',
@@ -251,7 +257,10 @@ class MyOrdersPage extends StatelessWidget {
                             ),
                             onPressed: () => Get.toNamed(
                               '/order-details',
-                              arguments: {'orderId': o.id},
+                              arguments: {
+                                'orderId': o.id,
+                                'status_order': o.statusOrder,
+                              },
                             ),
                             child: const Text(
                               'تفاصيل',

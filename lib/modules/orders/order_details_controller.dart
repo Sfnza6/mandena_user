@@ -240,7 +240,8 @@ class OrderHeaderModel {
     userId: int.tryParse('${j['user_id']}') ?? 0,
     driverId: int.tryParse('${j['driver_id']}') ?? 0,
     status: (j['status'] ?? '').toString(),
-    statusOrder: (j['status_order'] ?? '').toString(),
+    statusOrder: (j['status_order'] ?? j['status_order_label'] ?? '')
+        .toString(),
     total: (j['total'] is num)
         ? (j['total'] as num).toDouble()
         : (double.tryParse('${j['total']}') ?? 0.0),
@@ -437,7 +438,9 @@ class OrderDetailsController extends GetxController {
   String deliveryTypeArabic(String key) {
     switch (key.toLowerCase()) {
       case 'pickup':
-        return 'استلام';
+        return 'استلام خارجي';
+      case 'internal_pickup':
+        return 'استلام داخلي';
       case 'delivery':
         return 'توصيل';
       default:
@@ -445,25 +448,94 @@ class OrderDetailsController extends GetxController {
     }
   }
 
+  bool _isPickupOrderType(String value) {
+    final x = value.toLowerCase().trim();
+    return x == 'pickup' ||
+        x == 'internal_pickup' ||
+        x == 'استلام خارجي' ||
+        x == 'استلام داخلي';
+  }
+
+  String statusArabicForOrder(String status, String statusOrder) {
+    final st = status.toLowerCase().trim();
+    final isPickup = _isPickupOrderType(statusOrder);
+
+    if (isPickup) {
+      switch (st) {
+        case 'pending':
+        case 'paid':
+          return 'بانتظار القبول';
+        case 'processing':
+        case 'accepted':
+        case 'approved':
+        case 'ready_for_driver':
+        case 'searching_driver':
+        case 'driver_offered':
+        case 'assigned':
+        case 'driver_to_pickup':
+          return 'جاري التحضير';
+        case 'ready_pickup':
+        case 'pickup_ready':
+        case 'ready_for_pickup':
+        case 'prepared_pickup':
+          return 'الطلب جاهز';
+        case 'delivered':
+        case 'success':
+        case 'complete':
+        case 'completed':
+          return 'مكتملة';
+        case 'rejected':
+          return 'مرفوض';
+        case 'cancelled':
+        case 'canceled':
+        case 'failed':
+          return 'ملغي';
+      }
+    }
+
+    return statusArabic(status);
+  }
+
   String statusArabic(String key) {
     switch (key.toLowerCase().trim()) {
       case 'pending':
-        return 'قيد الانتظار';
+      case 'paid':
+        return 'بانتظار القبول';
       case 'processing':
-        return 'قيد المعالجة';
       case 'accepted':
-        return 'تم القبول';
+      case 'approved':
+      case 'ready_for_driver':
+      case 'searching_driver':
+      case 'driver_offered':
+        return 'جاري التحضير / جاري البحث عن سائق';
+      case 'ready_pickup':
+      case 'pickup_ready':
+      case 'ready_for_pickup':
+      case 'prepared_pickup':
+        return 'الطلب جاهز';
       case 'assigned':
-        return 'تم إسناده للسائق';
+      case 'driver_to_pickup':
+        return 'جاري التحضير / تم تعيين سائق';
+      case 'on_the_way':
+      case 'out_for_delivery':
+      case 'delivering':
+      case 'handover':
+        return 'جاري التوصيل';
       case 'delivered':
-        return 'تم التسليم';
+      case 'success':
+      case 'complete':
+      case 'completed':
+        return 'مكتملة';
       case 'rejected':
         return 'مرفوض';
       case 'cancelled':
       case 'canceled':
+      case 'failed':
         return 'ملغي';
       case 'pickup':
-        return 'استلام';
+        return 'استلام خارجي';
+      case 'internal_pickup':
+        return 'استلام داخلي';
       case 'delivery':
         return 'توصيل';
       default:

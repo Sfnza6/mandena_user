@@ -29,10 +29,10 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBO733hh4ph2Xg0SMy2AZngftU3NVxStQQ',
-    appId: '1:914622534762:android:138a5b730e155fa5956613',
-    messagingSenderId: '914622534762',
-    projectId: 'mandena-8866a',
-    storageBucket: 'mandena-8866a.firebasestorage.app',
+    apiKey: 'AIzaSyDvbM5ho5y13YOkgsw4RaUuOk244zvwph4',
+    appId: '1:1030980911701:android:23361354487012973bcadc',
+    messagingSenderId: '1030980911701',
+    projectId: 'mandena-notifications',
+    storageBucket: 'mandena-notifications.firebasestorage.app',
   );
 }

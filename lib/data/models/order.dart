@@ -4,7 +4,7 @@ class OrderSummary {
   final int paymentMethod; // 0 كاش / 1 بطاقة (حسبك)
   final double total;
   final String
-  status; // pending, processing, assigned, on_the_way, delivering, handover
+  status; // pending, processing, ready_for_driver, assigned, on_the_way, delivered
   final String createdAt;
 
   OrderSummary({

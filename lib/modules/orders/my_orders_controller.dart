@@ -13,6 +13,7 @@ class UserOrder {
   final int id;
   final double total;
   final String status; // قد تأتي normalized_status
+  final String statusOrder; // delivery | pickup | internal_pickup
   final String createdAt;
   final int itemsCount;
 
@@ -20,6 +21,7 @@ class UserOrder {
     required this.id,
     required this.total,
     required this.status,
+    required this.statusOrder,
     required this.createdAt,
     required this.itemsCount,
   });
@@ -30,6 +32,12 @@ class UserOrder {
         ? (j['total'] as num).toDouble()
         : (double.tryParse('${j['total'] ?? 0}') ?? 0.0),
     status: (j['normalized_status'] ?? j['status'] ?? '').toString(),
+    statusOrder:
+        (j['status_order'] ??
+                j['order_type'] ??
+                j['status_order_label'] ??
+                'delivery')
+            .toString(),
     createdAt: (j['created_at'] ?? '').toString(),
     itemsCount: int.tryParse('${j['items_count'] ?? j['count'] ?? 0}') ?? 0,
   );
@@ -39,12 +47,13 @@ class UserOrder {
     'id': id,
     'total': total,
     'status': status,
+    'status_order': statusOrder,
     'created_at': createdAt,
     'items_count': itemsCount,
   };
 }
 
-class MyOrdersController extends GetxController {
+class MyOrdersController extends GetxController with WidgetsBindingObserver {
   final _api = ApiService();
 
   final loading = false.obs;
@@ -52,8 +61,12 @@ class MyOrdersController extends GetxController {
   final history = <UserOrder>[].obs;
 
   Timer? _poll;
-  final pollSeconds = 8;
+  final pollSeconds = 3;
+  bool _cacheLoadedOnce = false;
+  bool _isFetching = false;
   final tabIndex = 0.obs; // 0: حاليًا، 1: السجل
+
+  final Map<int, UserOrder> _localSeeds = {};
 
   // 🆕 فلاغ للحساب التجريبي
   bool _isDemo = false;
@@ -144,6 +157,71 @@ class MyOrdersController extends GetxController {
     return x.isEmpty ? 'pending' : x;
   }
 
+  String _normalizeStatusOrder(String value) {
+    final x = value.toLowerCase().trim();
+    if (x == 'pickup' || x == 'استلام خارجي') return 'pickup';
+    if (x == 'internal_pickup' || x == 'استلام داخلي') return 'internal_pickup';
+    return 'delivery';
+  }
+
+  bool isPickupOrder(UserOrder o) {
+    final t = _normalizeStatusOrder(o.statusOrder);
+    return t == 'pickup' || t == 'internal_pickup';
+  }
+
+  void seedOrder({
+    required int orderId,
+    double total = 0,
+    int itemsCount = 0,
+    String status = 'pending',
+    String statusOrder = 'delivery',
+    String? createdAt,
+  }) {
+    if (orderId <= 0) return;
+
+    final order = UserOrder(
+      id: orderId,
+      total: total,
+      status: _normalize(status),
+      statusOrder: _normalizeStatusOrder(statusOrder),
+      createdAt: (createdAt == null || createdAt.trim().isEmpty)
+          ? DateTime.now().toIso8601String()
+          : createdAt,
+      itemsCount: itemsCount,
+    );
+
+    _localSeeds[orderId] = order;
+    _stickyUntil[orderId] = DateTime.now().add(_stickyDuration);
+
+    current.removeWhere((o) => o.id == orderId);
+    history.removeWhere((o) => o.id == orderId);
+    current.insert(0, order);
+    current.refresh();
+  }
+
+  void _mergeLocalSeeds(List<UserOrder> cur, List<UserOrder> his) {
+    final now = DateTime.now();
+    final expired = <int>[];
+
+    _localSeeds.forEach((id, order) {
+      final until = _stickyUntil[id];
+      if (until == null || now.isAfter(until)) {
+        expired.add(id);
+        return;
+      }
+
+      // لا ترجع الطلب للقائمة الحالية لو السيرفر رجّعه في السجل/المكتملة.
+      if (!cur.any((x) => x.id == id) && !his.any((x) => x.id == id)) {
+        cur.add(order);
+      }
+    });
+
+    for (final id in expired) {
+      _localSeeds.remove(id);
+      _stickyUntil.remove(id);
+    }
+  }
+
   // =================== كاش الطلبات ===================
   String _cacheKeyFor(int uid) => 'my_orders_uid_$uid';
 
@@ -202,28 +280,54 @@ class MyOrdersController extends GetxController {
   @override
   Future<void> onReady() async {
     super.onReady();
+    WidgetsBinding.instance.addObserver(this);
 
-    // استلام orderId للتثبيت (اختياري)
+    // استلام orderId للتثبيت والظهور الفوري بعد إنشاء الطلب
     final hiArg = Get.arguments is Map ? (Get.arguments as Map) : null;
     final argId = hiArg != null
-        ? int.tryParse('${hiArg['highlightOrderId'] ?? ''}')
+        ? int.tryParse(
+            '${hiArg['highlightOrderId'] ?? hiArg['order_id'] ?? ''}',
+          )
         : null;
 
-    if (argId != null) {
-      _stickyUntil[argId] = DateTime.now().add(_stickyDuration);
+    if (argId != null && argId > 0) {
+      seedOrder(
+        orderId: argId,
+        total:
+            double.tryParse('${hiArg == null ? 0 : (hiArg['total'] ?? 0)}') ??
+            0,
+        itemsCount:
+            int.tryParse(
+              '${hiArg == null ? 0 : (hiArg['items_count'] ?? 0)}',
+            ) ??
+            0,
+        status: '${hiArg == null ? 'pending' : (hiArg['status'] ?? 'pending')}',
+        statusOrder:
+            '${hiArg == null ? 'delivery' : (hiArg['status_order'] ?? 'delivery')}',
+        createdAt:
+            '${hiArg == null ? DateTime.now().toIso8601String() : (hiArg['created_at'] ?? DateTime.now().toIso8601String())}',
+      );
     }
 
-    await fetch();
+    await fetch(silent: argId != null);
 
     _poll = Timer.periodic(
       Duration(seconds: pollSeconds),
-      (_) => fetch(silent: true),
+      (_) => fetch(silent: true, forceNetwork: true),
     );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      fetch(silent: true, forceNetwork: true);
+    }
   }
 
   @override
   void onClose() {
     _poll?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.onClose();
   }
 
@@ -256,7 +360,9 @@ class MyOrdersController extends GetxController {
     return const <Map<String, dynamic>>[];
   }
 
-  Future<void> fetch({bool silent = false}) async {
+  Future<void> fetch({bool silent = false, bool forceNetwork = false}) async {
+    if (_isFetching) return;
+    _isFetching = true;
     int? uid;
 
     try {
@@ -282,8 +388,15 @@ class MyOrdersController extends GetxController {
         return;
       }
 
-      // ✅ أولاً: حمّل آخر نسخة من الكاش (تعطي إحساس سرعة)
-      await _loadCache(uid!);
+      // ✅ الكاش يُحمّل مرة واحدة فقط عند أول دخول، وليس مع كل Polling.
+      // سابقاً كان الكاش القديم يرجّع الطلب للحالي حتى بعد اكتماله من السيرفر.
+      if (!_cacheLoadedOnce &&
+          !forceNetwork &&
+          current.isEmpty &&
+          history.isEmpty) {
+        await _loadCache(uid!);
+        _cacheLoadedOnce = true;
+      }
 
       // أهم نقطة: تأكّد Env.ordersList = 'get_orders.php'
       final res = await _api.get(
@@ -306,6 +419,7 @@ class MyOrdersController extends GetxController {
       }
 
       final list = _coerceList(res);
+      final serverIds = <int>{};
 
       final cur = <UserOrder>[];
       final his = <UserOrder>[];
@@ -313,6 +427,7 @@ class MyOrdersController extends GetxController {
       for (final m in list) {
         final o = UserOrder.fromJson(m);
         final st = _normalize(o.status);
+        if (o.id > 0) serverIds.add(o.id);
 
         if (_currentSet.contains(st)) {
           cur.add(
@@ -320,6 +435,7 @@ class MyOrdersController extends GetxController {
               id: o.id,
               total: o.total,
               status: st,
+              statusOrder: _normalizeStatusOrder(o.statusOrder),
               createdAt: o.createdAt,
               itemsCount: o.itemsCount,
             ),
@@ -330,6 +446,7 @@ class MyOrdersController extends GetxController {
               id: o.id,
               total: o.total,
               status: st,
+              statusOrder: _normalizeStatusOrder(o.statusOrder),
               createdAt: o.createdAt,
               itemsCount: o.itemsCount,
             ),
@@ -341,6 +458,7 @@ class MyOrdersController extends GetxController {
               id: o.id,
               total: o.total,
               status: st,
+              statusOrder: _normalizeStatusOrder(o.statusOrder),
               createdAt: o.createdAt,
               itemsCount: o.itemsCount,
             ),
@@ -348,15 +466,25 @@ class MyOrdersController extends GetxController {
         }
       }
 
-      // دمج المثبتة محليًا لو السيرفر ما رجّعها لحظيًا
+      // أي طلب رجع من السيرفر لا نعود نعتمد على نسخته المحلية القديمة.
+      for (final id in serverIds) {
+        _localSeeds.remove(id);
+        _stickyUntil.remove(id);
+      }
+
+      // دمج المثبتة محليًا فقط لو السيرفر لم يرجعها نهائيًا، ولم تصبح موجودة في السجل.
       final keep = <UserOrder>[];
       for (final o in current) {
-        if (_isSticky(o.id) && !cur.any((x) => x.id == o.id)) {
+        if (_isSticky(o.id) &&
+            !serverIds.contains(o.id) &&
+            !cur.any((x) => x.id == o.id) &&
+            !his.any((x) => x.id == o.id)) {
           keep.add(o);
         }
       }
 
       cur.addAll(keep);
+      _mergeLocalSeeds(cur, his);
 
       cur.sort((a, b) => b.id.compareTo(a.id));
       his.sort((a, b) => b.id.compareTo(a.id));
@@ -365,7 +493,7 @@ class MyOrdersController extends GetxController {
       history.assignAll(his);
 
       // ✅ حفظ النتيجة الجديدة في الكاش
-      await _saveCache(uid);
+      await _saveCache(uid!);
     } catch (e) {
       // عند الخطأ نحاول نعرض الكاش (لو موجود)
       if (uid != null && !_isDemo && uid != 0) {
@@ -380,6 +508,7 @@ class MyOrdersController extends GetxController {
         );
       }
     } finally {
+      _isFetching = false;
       if (!silent) loading(false);
     }
   }
@@ -398,7 +527,7 @@ class MyOrdersController extends GetxController {
     final st = _normalize(o.status);
 
     if (_doneSet.contains(st) || st == 'delivered') {
-      return ('تم التسليم', const Color(0xFF1FA85B));
+      return ('✅ مكتملة', const Color(0xFF1FA85B));
     }
 
     if (_cancelSet.contains(st)) {
@@ -409,35 +538,36 @@ class MyOrdersController extends GetxController {
     switch (st) {
       case 'pending':
       case 'paid':
-        return ('بانتظار القبول', const Color(0xFFFB8C00));
+        return ('⏳ بانتظار القبول', const Color(0xFFFB8C00));
 
       case 'processing':
-        return ('جاري التحضير', const Color(0xFF1976D2));
-
-      // ✅ هذه التي تظهر للعميل بعد ضغط "تم التجهيز" من مستقبل الطلبات
-      case 'ready_pickup':
-        return ('الطلبية جاهزة', const Color(0xFF1FA85B));
-
       case 'ready_for_driver':
-        return ('جاهز للسائق', const Color(0xFF7B1FA2));
-
       case 'searching_driver':
-        return ('نبحث عن سائق', const Color(0xFF7B1FA2));
-
       case 'driver_offered':
-        return ('معروض على السائق', const Color(0xFF7B1FA2));
+        if (isPickupOrder(o)) {
+          return ('🍳 جاري التحضير', const Color(0xFF7B1FA2));
+        }
+        return (
+          '🍳 جاري التحضير / جاري البحث عن سائق',
+          const Color(0xFF7B1FA2),
+        );
+
+      // ✅ طلب استلام من المطعم جاهز
+      case 'ready_pickup':
+        return ('✅ الطلب جاهز', const Color(0xFF1FA85B));
 
       case 'assigned':
-        return ('السائق قبل الطلب', const Color(0xFF00897B));
-
       case 'driver_to_pickup':
-        return ('السائق للاستلام', const Color(0xFF00897B));
+        if (isPickupOrder(o)) {
+          return ('🍳 جاري التحضير', const Color(0xFF7B1FA2));
+        }
+        return ('🚗 جاري التحضير / تم تعيين سائق', const Color(0xFF00897B));
 
       case 'on_the_way':
       case 'out_for_delivery':
       case 'delivering':
       case 'handover':
-        return ('جاري التوصيل', const Color(0xFF00897B));
+        return ('🏃 جاري التوصيل', const Color(0xFFE65100));
 
       default:
         return (st, const Color(0xFF757575));

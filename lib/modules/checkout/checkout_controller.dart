@@ -12,6 +12,7 @@ import 'package:mandena/core/api_service.dart';
 import 'package:mandena/core/session.dart';
 import 'package:mandena/data/models/address.dart';
 import 'package:mandena/modules/cart/cart_controller.dart';
+import 'package:mandena/modules/orders/my_orders_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // ✅ للكاش
 
 class CheckoutController extends GetxController {
@@ -23,7 +24,7 @@ class CheckoutController extends GetxController {
   /// 0 = كاش, 1 = بطاقة/أونلاين
   final payment = 0.obs;
 
-  /// 'delivery' | 'pickup'
+  /// 'delivery' | 'pickup' | 'internal_pickup'
   final statusOrder = 'delivery'.obs;
 
   /// cash | yesser | masrafy | sahari | bank | ...
@@ -201,7 +202,7 @@ class CheckoutController extends GetxController {
       }
 
       final so = data['statusOrder']?.toString();
-      if (so == 'delivery' || so == 'pickup') {
+      if (so == 'delivery' || so == 'pickup' || so == 'internal_pickup') {
         statusOrder.value = so!;
       }
 
@@ -249,9 +250,9 @@ class CheckoutController extends GetxController {
     super.onInit();
     cart = Get.find<CartController>();
 
-    // 👇 مراقبة تغيير نوع الطلب (توصيل / استلام)
+    // 👇 مراقبة تغيير نوع الطلب (توصيل / استلام خارجي / استلام داخلي)
     ever<String>(statusOrder, (mode) async {
-      if (mode == 'pickup') {
+      if (mode == 'pickup' || mode == 'internal_pickup') {
         _applyPickupDeliveryFee();
       } else if (mode == 'delivery') {
         await _restoreDeliveryFee();
@@ -408,7 +409,7 @@ class CheckoutController extends GetxController {
     _saveCheckoutToCache(); // ✅ حفظ العنوان المختار
   }
 
-  // 👇 لما تختار استلام → رسوم التوصيل = 0 فقط
+  // 👇 لما تختار استلام خارجي أو استلام داخلي → رسوم التوصيل = 0 فقط
   void _applyPickupDeliveryFee() {
     try {
       cart.delivery.value = 0;
@@ -989,10 +990,16 @@ class CheckoutController extends GetxController {
         title: 'تم',
       );
 
-      Get.offNamed(
-        '/my-orders',
-        parameters: {'tab': 'current'},
-        arguments: {'highlightOrderId': orderId},
+      _seedOrderInMyOrders(
+        orderId: orderId,
+        total: _total,
+        itemsCount: items.length,
+      );
+
+      _openMyOrdersAfterSuccess(
+        orderId: orderId,
+        total: _total,
+        itemsCount: items.length,
       );
     } catch (e) {
       if (kDebugMode) {
@@ -1102,10 +1109,16 @@ class CheckoutController extends GetxController {
         title: 'تم',
       );
 
-      Get.offNamed(
-        '/my-orders',
-        parameters: {'tab': 'current'},
-        arguments: {'highlightOrderId': orderId},
+      _seedOrderInMyOrders(
+        orderId: orderId,
+        total: _total,
+        itemsCount: items.length,
+      );
+
+      _openMyOrdersAfterSuccess(
+        orderId: orderId,
+        total: _total,
+        itemsCount: items.length,
       );
     } catch (e) {
       if (kDebugMode) {
@@ -1115,6 +1128,62 @@ class CheckoutController extends GetxController {
     } finally {
       isPlacing.value = false;
     }
+  }
+
+  void _seedOrderInMyOrders({
+    required int? orderId,
+    required double total,
+    required int itemsCount,
+  }) {
+    if (orderId == null || orderId <= 0) return;
+
+    try {
+      if (Get.isRegistered<MyOrdersController>()) {
+        final orders = Get.find<MyOrdersController>();
+        orders.seedOrder(
+          orderId: orderId,
+          total: total,
+          itemsCount: itemsCount,
+          status: 'pending',
+          statusOrder: statusOrder.value,
+          createdAt: DateTime.now().toIso8601String(),
+        );
+        orders.fetch(silent: true);
+      }
+    } catch (_) {}
+  }
+
+  void _openMyOrdersAfterSuccess({
+    required int? orderId,
+    required double total,
+    required int itemsCount,
+  }) {
+    final args = {
+      'highlightOrderId': orderId,
+      'total': total.toStringAsFixed(2),
+      'items_count': itemsCount,
+      'status': 'pending',
+      'status_order': statusOrder.value,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+
+    Get.offNamedUntil(
+      '/my-orders',
+      (route) {
+        final name = route.settings.name ?? '';
+
+        // بعد إتمام الطلب نحذف صفحة الدفع والسلة من مسار الرجوع.
+        // لو كان المستخدم جاي من تفاصيل صنف، الرجوع من طلباتي يرجعه للتفاصيل مباشرة.
+        // ولو ما فيش تفاصيل صنف في المسار، نخلي أول صفحة موجودة حتى ما يصيرش مسار فارغ.
+        if (name == AppRoutes.itemDetail || name == AppRoutes.home) {
+          return true;
+        }
+
+        return route.isFirst;
+      },
+      parameters: {'tab': 'current'},
+      arguments: args,
+    );
   }
 
   @override

@@ -33,7 +33,7 @@ class _ForgotPhoneViewState extends State<ForgotPhoneView> {
   @override
   Widget build(BuildContext context) {
     // 🎨 نفس ألوان شاشات الـ Auth + الليل
-    const kPrimary = Color(0xFF6F3F17); // بني EVORANTA
+    const kPrimary = Color(0xFFFF5A00); // برتقالي EVORANTA
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -42,7 +42,7 @@ class _ForgotPhoneViewState extends State<ForgotPhoneView> {
     final kDark = isDark ? Colors.white : const Color(0xFF1F2933);
     final kFieldFill =
         theme.inputDecorationTheme.fillColor ??
-        (isDark ? theme.cardColor.withOpacity(0.9) : const Color(0xFFF2F3F7));
+        (isDark ? theme.cardColor.withOpacity(0.9) : const Color(0xFFFFFAF6));
     final cardColor = theme.cardColor;
     final subTextColor = isDark
         ? Colors.grey.shade400
@@ -103,7 +103,7 @@ class _ForgotPhoneViewState extends State<ForgotPhoneView> {
                       padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.07),
@@ -153,7 +153,7 @@ class _ForgotPhoneViewState extends State<ForgotPhoneView> {
                                 border: const OutlineInputBorder(
                                   borderSide: BorderSide.none,
                                   borderRadius: BorderRadius.all(
-                                    Radius.circular(10),
+                                    Radius.circular(16),
                                   ),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -174,14 +174,14 @@ class _ForgotPhoneViewState extends State<ForgotPhoneView> {
                             // زر إرسال الرمز
                             Obx(
                               () => SizedBox(
-                                height: 46,
+                                height: 50,
                                 child: ElevatedButton(
                                   onPressed: c.sending.value ? null : _send,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: kPrimary,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                     elevation: 0,
                                   ),
@@ -229,7 +229,7 @@ class _ForgotPhoneViewState extends State<ForgotPhoneView> {
       Get.snackbar(
         'خطأ',
         (r['message'] ?? 'تعذّر إرسال رمز التحقق').toString(),
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }

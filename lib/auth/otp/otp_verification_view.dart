@@ -39,18 +39,20 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   @override
   Widget build(BuildContext context) {
     // 🎨 نفس روح وألوان طلباتي / التسجيل + دعم الليل
-    const kPrimary = Color(0xFF6F3F17); // بني EVORANTA
+    const kPrimary = Color(0xFFFF5A00); // برتقالي EVORANTA
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     final kPageBg = theme.scaffoldBackgroundColor;
     final kDark = isDark ? Colors.white : const Color(0xFF1F2933);
-    final kFieldFill = theme.inputDecorationTheme.fillColor ??
-        (isDark ? theme.cardColor.withOpacity(0.9) : const Color(0xFFF2F3F7));
+    final kFieldFill =
+        theme.inputDecorationTheme.fillColor ??
+        (isDark ? theme.cardColor.withOpacity(0.9) : const Color(0xFFFFFAF6));
     final cardColor = theme.cardColor;
-    final subTextColor =
-        isDark ? Colors.grey.shade400 : const Color(0xFF6B7280);
+    final subTextColor = isDark
+        ? Colors.grey.shade400
+        : const Color(0xFF6B7280);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -140,7 +142,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                       padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                       decoration: BoxDecoration(
                         color: cardColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.07),
@@ -164,10 +166,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                           Text(
                             'أدخل الرمز المُرسل إلى: ${widget.phone}',
                             textAlign: TextAlign.start,
-                            style: TextStyle(
-                              color: subTextColor,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: subTextColor, fontSize: 12),
                           ),
                           const SizedBox(height: 18),
 
@@ -176,7 +175,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                             enabled: !_navigating,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
+                              FilteringTextInputFormatter.digitsOnly,
                             ],
                             textAlign: TextAlign.center,
                             maxLength: 6,
@@ -195,8 +194,9 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                               fillColor: kFieldFill,
                               border: const OutlineInputBorder(
                                 borderSide: BorderSide.none,
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(12)),
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -215,17 +215,17 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                           // زر التحقق
                           Obx(
                             () => SizedBox(
-                              height: 48,
+                              height: 50,
                               child: ElevatedButton(
-                                onPressed: (_navigating ||
-                                        otpC.isVerifying.value)
+                                onPressed:
+                                    (_navigating || otpC.isVerifying.value)
                                     ? null
                                     : _onVerify,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: kPrimary,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                   elevation: 0,
                                 ),
@@ -269,7 +269,8 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                                     : () async {
                                         FocusScope.of(context).unfocus();
                                         final r = await otpC.sendOtp(
-                                            phone: widget.phone); // إرسال فعلي
+                                          phone: widget.phone,
+                                        ); // إرسال فعلي
                                         if ((r['status'] ?? '')
                                                 .toString()
                                                 .toLowerCase() ==
@@ -277,8 +278,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                                           Get.snackbar(
                                             'تم',
                                             'أُعيد إرسال الرمز',
-                                            snackPosition:
-                                                SnackPosition.BOTTOM,
+                                            snackPosition: SnackPosition.BOTTOM,
                                           );
                                           otpC.startTimer(60);
                                         } else {
@@ -287,8 +287,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                                             (r['message'] ??
                                                     'تعذّر إرسال الرمز')
                                                 .toString(),
-                                            snackPosition:
-                                                SnackPosition.BOTTOM,
+                                            snackPosition: SnackPosition.BOTTOM,
                                           );
                                         }
                                       },
@@ -323,7 +322,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       Get.snackbar(
         'تنبيه',
         'أدخل الرمز كاملاً',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
@@ -342,7 +341,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       Get.snackbar(
         'تم',
         (r['message'] ?? 'تم التحقق بنجاح. يمكنك المتابعة.').toString(),
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
       await Future.microtask(() => widget.onVerified());
       return;
@@ -351,14 +350,14 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       Get.snackbar(
         'انتهى',
         'انتهت صلاحية الرمز، أعد الإرسال',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
     Get.snackbar(
       'فشل',
       (r['message'] ?? 'رمز خاطئ').toString(),
-      snackPosition: SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.TOP,
     );
   }
 }
@@ -399,12 +398,7 @@ class _HeaderPainter extends CustomPainter {
     final path = Path()
       ..moveTo(0, 0)
       ..lineTo(0, h - depth)
-      ..quadraticBezierTo(
-        size.width / 2,
-        h + depth,
-        size.width,
-        h - depth,
-      )
+      ..quadraticBezierTo(size.width / 2, h + depth, size.width, h - depth)
       ..lineTo(size.width, 0)
       ..close();
 

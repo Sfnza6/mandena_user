@@ -128,38 +128,61 @@ class CheckoutView extends StatelessWidget {
                 brandSoft: brandSoft,
               ),
               Obx(
-                () => Row(
-                  children: [
-                    Expanded(
-                      child: _ModeCard(
-                        title: 'توصيل',
-                        subtitle: 'يوصل لعند بابك',
-                        icon: Icons.delivery_dining_rounded,
-                        selected: c.statusOrder.value == 'delivery',
-                        onTap: () => c.statusOrder.value = 'delivery',
-                        cardColor: cardColor,
-                        textDark: textDark,
-                        textMuted: textMuted,
-                        brandSoft: brandSoft,
-                        brandStroke: brandStroke,
+                () => SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  reverse: true,
+                  child: Row(
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      SizedBox(
+                        width: 128,
+                        child: _ModeCard(
+                          title: 'توصيل',
+                          subtitle: 'يوصل لعند بابك',
+                          icon: Icons.delivery_dining_rounded,
+                          selected: c.statusOrder.value == 'delivery',
+                          onTap: () => c.statusOrder.value = 'delivery',
+                          cardColor: cardColor,
+                          textDark: textDark,
+                          textMuted: textMuted,
+                          brandSoft: brandSoft,
+                          brandStroke: brandStroke,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ModeCard(
-                        title: 'استلام',
-                        subtitle: 'من الفرع مباشرة',
-                        icon: Icons.storefront_rounded,
-                        selected: c.statusOrder.value == 'pickup',
-                        onTap: () => c.statusOrder.value = 'pickup',
-                        cardColor: cardColor,
-                        textDark: textDark,
-                        textMuted: textMuted,
-                        brandSoft: brandSoft,
-                        brandStroke: brandStroke,
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 128,
+                        child: _ModeCard(
+                          title: 'استلام خارجي',
+                          subtitle: 'تستلمه من خارج الفرع',
+                          icon: Icons.storefront_rounded,
+                          selected: c.statusOrder.value == 'pickup',
+                          onTap: () => c.statusOrder.value = 'pickup',
+                          cardColor: cardColor,
+                          textDark: textDark,
+                          textMuted: textMuted,
+                          brandSoft: brandSoft,
+                          brandStroke: brandStroke,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 128,
+                        child: _ModeCard(
+                          title: 'استلام داخلي',
+                          subtitle: 'داخل صالة الأكل',
+                          icon: Icons.restaurant_rounded,
+                          selected: c.statusOrder.value == 'internal_pickup',
+                          onTap: () => c.statusOrder.value = 'internal_pickup',
+                          cardColor: cardColor,
+                          textDark: textDark,
+                          textMuted: textMuted,
+                          brandSoft: brandSoft,
+                          brandStroke: brandStroke,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 

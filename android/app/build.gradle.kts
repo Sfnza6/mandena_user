@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mandena"
+    namespace = "com.brainware.mandena.user"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,7 +26,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com).
-        applicationId = "com.example.mandena"
+        applicationId = "com.brainware.mandena.user"
         
         // ملاحظة: تأكد أن minSdkVersion هي 21 أو أكثر في ملف local.properties
         minSdk = flutter.minSdkVersion

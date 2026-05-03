@@ -104,7 +104,10 @@ class OrderDetailsView extends GetView<OrderDetailsController> {
               children: [
                 _HeaderCard(
                   orderId: h.id,
-                  status: controller.statusArabic(h.status),
+                  status: controller.statusArabicForOrder(
+                    h.status,
+                    h.statusOrder,
+                  ),
                   deliveryType: controller.deliveryTypeArabic(h.statusOrder),
                   address: h.address,
                   createdAt: h.createdAt,
@@ -218,16 +221,34 @@ class _HeaderCard extends StatelessWidget {
     if (v.contains('pending') || v.contains('قيد الانتظار')) {
       return const Color(0xFFFF9800);
     }
-    if (v.contains('processing') || v.contains('قيد المعالجة')) {
+    if (v.contains('processing') ||
+        v.contains('accepted') ||
+        v.contains('approved') ||
+        v.contains('ready_for_driver') ||
+        v.contains('searching_driver') ||
+        v.contains('driver_offered') ||
+        v.contains('جاري التحضير') ||
+        v.contains('جاري البحث')) {
       return const Color(0xFF2196F3);
     }
-    if (v.contains('accepted') || v.contains('تم القبول')) {
+    if (v.contains('assigned') ||
+        v.contains('driver_to_pickup') ||
+        v.contains('تم تعيين') ||
+        v.contains('تم إسناده')) {
       return const Color(0xFF00897B);
     }
-    if (v.contains('assigned') || v.contains('تم إسناده')) {
-      return const Color(0xFF7B61FF);
+    if (v.contains('on_the_way') ||
+        v.contains('out_for_delivery') ||
+        v.contains('delivering') ||
+        v.contains('handover') ||
+        v.contains('جاري التوصيل')) {
+      return const Color(0xFFE65100);
     }
-    if (v.contains('delivered') || v.contains('تم التسليم')) {
+    if (v.contains('delivered') ||
+        v.contains('success') ||
+        v.contains('complete') ||
+        v.contains('مكتملة') ||
+        v.contains('تم التسليم')) {
       return const Color(0xFF2E7D32);
     }
     if (v.contains('rejected') ||

@@ -431,7 +431,7 @@ class CartController extends GetxController {
     }
   }
 
-  Future<void> add(int itemId, {int qty = 1}) async {
+  Future<void> add(int itemId, {int qty = 1, bool showSnack = true}) async {
     if (!await _ensureBoundToSession()) return;
     try {
       final res = await _api.post(
@@ -448,9 +448,14 @@ class CartController extends GetxController {
       }
 
       await load();
-      _showSuccess('تمت إضافة الصنف إلى السلة');
+      if (showSnack) {
+        _showSuccess('تمت إضافة الصنف إلى السلة');
+      }
     } catch (e) {
-      _showUserError(_friendlyMessage(e), onRetry: () => add(itemId, qty: qty));
+      _showUserError(
+        _friendlyMessage(e),
+        onRetry: () => add(itemId, qty: qty, showSnack: showSnack),
+      );
     }
   }
 
